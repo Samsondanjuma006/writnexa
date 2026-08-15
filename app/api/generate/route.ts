@@ -1,21 +1,16 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1",
-  defaultHeaders: {
-    "HTTP-Referer": "http://localhost:3000",
-    "X-Title": "SparkWriter",
-  },
-});
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const idea = typeof body.idea === "string" ? body.idea.trim() : "";
-    const type = typeof body.type === "string" ? body.type : "Blog post";
+    const idea =
+      typeof body.idea === "string" ? body.idea.trim() : "";
+
+    const type =
+      typeof body.type === "string" && body.type.trim()
+        ? body.type.trim()
+        : "Blog post";
 
     if (!idea) {
       return NextResponse.json(
@@ -24,37 +19,91 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      console.error("OPENAI_API_KEY is missing");
+
       return NextResponse.json(
         { error: "AI provider is not configured." },
         { status: 500 },
       );
     }
+    let formatInstruction =
+  "Write clear, useful and engaging content.";
 
-    const response = await client.chat.completions.create({
-      model: "openai/gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are SparkWriter, a professional AI writing assistant for bloggers, creators, marketers, and businesses. Create useful, original, clear, engaging content. Do not add unnecessary introductions or explanations.",
+if (type.toLowerCase() === "social post") {
+  formatInstruction =
+    "Write a concise, engaging social media post with a strong opening and natural call to action.";
+}
+
+if (type.toLowerCase() === "video script") {
+  formatInstruction =
+    "Write a short video script with a strong hook, clear narration, and an engaging ending.";
+}
+
+if (type.toLowerCase() === "blog post") {
+  formatInstruction =
+    "Write a polished blog post with a compelling introduction, useful sections, and a strong conclusion.";
+}
+   const openRouterResponse = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          "HTTP-Referer": "http://localhost:3000",
+          "X-Title": "SparkWriter",
         },
+        body: JSON.stringify({
+          model: "openai/gpt-4o-mini",
+          messages: [
+{
+  role: "system",
+  content: `You are SparkWriter, a professional AI writing assistant.
+
+${formatInstruction}
+
+Return only the requested content.`,
+},
+            {
+              role: "user",
+              content: `Create a ${type} about this idea:
+
+${idea}`,
+            },
+          ],
+          max_tokens: 10,
+          temperature: 0.7,
+        }),
+      },
+    );
+
+    const data = await openRouterResponse.json();
+
+    if (!openRouterResponse.ok) {
+      console.error(
+        "OpenRouter error:",
+        openRouterResponse.status,
+        data,
+      );
+
+      return NextResponse.json(
         {
-          role: "user",
-          content: `Create a ${type} about this idea:
-
-${idea}
-
-Return polished, publication-ready content.`,
+          error:
+            data?.error?.message ||
+            "OpenRouter rejected the request.",
         },
-      ],
-      max_tokens: 1200,
-      temperature: 0.7,
-    });
+        { status: openRouterResponse.status },
+      );
+    }
 
-    const content = response.choices[0]?.message?.content;
+    const content = data?.choices?.[0]?.message?.content;
 
     if (!content) {
+      console.error("OpenRouter returned no content:", data);
+
       return NextResponse.json(
         { error: "The AI returned an empty response." },
         { status: 502 },
