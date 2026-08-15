@@ -66,6 +66,54 @@ export default function DashboardPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [idea, setIdea] = useState("");
   const [format, setFormat] = useState("Blog post");
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function generateContent() {
+    if (!idea.trim()) {
+      setError("Please enter an idea first.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setContent("");
+
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          idea,
+          type: format,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to generate content.");
+      }
+
+      setContent(data.content || "");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while generating content.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function selectFormat(value: string) {
+    setFormat(value);
+    setError("");
+  }
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-slate-950">
@@ -201,7 +249,10 @@ export default function DashboardPage() {
             <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-2">
               <textarea
                 value={idea}
-                onChange={(event) => setIdea(event.target.value)}
+                onChange={(event) => {
+                  setIdea(event.target.value);
+                  setError("");
+                }}
                 placeholder="What do you want to write about?"
                 className="min-h-[120px] w-full resize-none bg-transparent p-4 text-sm text-white outline-none placeholder:text-slate-500"
               />
@@ -211,7 +262,7 @@ export default function DashboardPage() {
                   {["Blog post", "Social post", "Video script"].map((item) => (
                     <button
                       key={item}
-                      onClick={() => setFormat(item)}
+                      onClick={() => selectFormat(item)}
                       className={`rounded-lg px-3 py-2 text-xs font-medium ${
                         format === item
                           ? "bg-white text-slate-950"
@@ -223,13 +274,59 @@ export default function DashboardPage() {
                   ))}
                 </div>
 
-                <button className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-bold text-slate-950">
-                  Generate
-                  <ArrowRight size={15} />
+                <button
+                  onClick={generateContent}
+                  disabled={loading}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? "Generating..." : "Generate"}
+                  {!loading && <ArrowRight size={15} />}
                 </button>
               </div>
+
+              {error && (
+                <div className="mt-3 rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-xs text-red-300">
+                  {error}
+                </div>
+              )}
             </div>
           </section>
+
+          {content && (
+            <section className="mt-8">
+              <div className="mb-4">
+                <h2 className="text-lg font-bold">Generated content</h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Your AI-generated {format.toLowerCase()}.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                <textarea
+                  value={content}
+                  onChange={(event) => setContent(event.target.value)}
+                  className="min-h-[260px] w-full resize-y text-sm leading-7 text-slate-700 outline-none"
+                />
+
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                  <button
+                    onClick={() => navigator.clipboard?.writeText(content)}
+                    className="rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-semibold text-white"
+                  >
+                    Copy content
+                  </button>
+
+                  <button
+                    onClick={generateContent}
+                    disabled={loading}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold"
+                  >
+                    Regenerate
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
 
           <section className="mt-9">
             <div className="mb-4">
@@ -246,7 +343,7 @@ export default function DashboardPage() {
                 return (
                   <button
                     key={item.title}
-                    onClick={() => setFormat(item.title)}
+                    onClick={() => selectFormat(item.title)}
                     className="group rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-1 hover:shadow-md"
                   >
                     <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700 group-hover:bg-slate-950 group-hover:text-white">
