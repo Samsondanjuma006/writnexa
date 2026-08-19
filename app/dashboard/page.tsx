@@ -271,6 +271,26 @@ export default function DashboardPage() {
     }
   }
 
+  function getExportBaseName() {
+    const activeDocument = savedDocuments.find(
+      (document) => document.id === activeDocumentId,
+    );
+
+    const source =
+      activeDocument?.title ||
+      content
+        .split("\n")
+        .map((line) => line.replace(/^#+\s*/, "").trim())
+        .find((line) => line.length > 0) ||
+      format;
+
+    return source
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "sparkwriter-document";
+  }
+
   function downloadContent() {
     if (!content.trim()) return;
 
@@ -282,7 +302,7 @@ export default function DashboardPage() {
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `${format.toLowerCase().replace(/\s+/g, "-")}-sparkwriter.txt`;
+    link.download = `${getExportBaseName()}-sparkwriter.txt`;
 
     document.body.appendChild(link);
     link.click();
@@ -300,7 +320,7 @@ export default function DashboardPage() {
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `${format.toLowerCase().replace(/\s+/g, "-")}-sparkwriter.md`;
+    link.download = `${getExportBaseName()}-sparkwriter.md`;
 
     document.body.appendChild(link);
     link.click();
