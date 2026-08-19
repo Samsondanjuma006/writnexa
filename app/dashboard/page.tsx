@@ -289,6 +289,25 @@ export default function DashboardPage() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
+  function downloadMarkdown() {
+    if (!content.trim()) return;
+
+    const blob = new Blob([content], {
+      type: "text/markdown;charset=utf-8",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${format.toLowerCase().replace(/\s+/g, "-")}-sparkwriter.md`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   function deleteDocument(id: string) {
     const documentToDelete = savedDocuments.find(
       (document) => document.id === id,
@@ -745,7 +764,15 @@ export default function DashboardPage() {
                     disabled={!!actionLoading}
                     className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Download
+                    Download TXT
+                  </button>
+
+                  <button
+                    onClick={downloadMarkdown}
+                    disabled={!!actionLoading}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Download Markdown
                   </button>
 
                   {["Improve", "Shorten", "Expand", "Rewrite"].map((action) => (
