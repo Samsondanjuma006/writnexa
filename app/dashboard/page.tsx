@@ -355,7 +355,7 @@ export default function DashboardPage() {
 
       const updatedDocument: SavedDocument = {
         id,
-        title,
+        title: existing?.title || title,
         type,
         time: "Just now",
         content: text,
