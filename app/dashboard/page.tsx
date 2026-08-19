@@ -617,6 +617,8 @@ export default function DashboardPage() {
 
                 <span className="text-xs text-slate-400">
                   {content.trim().split(/\\s+/).filter(Boolean).length} words
+                  <span className="mx-2 text-slate-300">·</span>
+                  {content.length} characters
                 </span>
               </div>
 
