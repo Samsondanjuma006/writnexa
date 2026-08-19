@@ -573,6 +573,13 @@ export default function DashboardPage() {
                 </button>
               </div>
 
+              {loading && (
+                <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-300">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                  SparkWriter is writing your draft...
+                </div>
+              )}
+
               {error && (
                 <div className="mt-3 rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-xs text-red-300">
                   {error}
