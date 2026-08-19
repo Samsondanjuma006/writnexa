@@ -619,6 +619,13 @@ export default function DashboardPage() {
                   {content.trim().split(/\\s+/).filter(Boolean).length} words
                   <span className="mx-2 text-slate-300">·</span>
                   {content.length} characters
+                  <span className="mx-2 text-slate-300">·</span>
+                  {Math.max(
+                    1,
+                    Math.ceil(
+                      content.trim().split(/\\s+/).filter(Boolean).length / 200,
+                    ),
+                  )} min read
                 </span>
               </div>
 
