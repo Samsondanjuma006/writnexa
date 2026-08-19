@@ -18,7 +18,9 @@ import {
   WandSparkles,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 
 const formats = [
@@ -44,21 +46,35 @@ const formats = [
   },
 ];
 
-const documents = [
+type SavedDocument = {
+  id: string;
+  title: string;
+  type: string;
+  time: string;
+  content: string;
+};
+
+const documents: SavedDocument[] = [
   {
+    id: "starter-1",
     title: "The future of AI for creators",
     type: "Blog post",
     time: "Today",
+    content: "",
   },
   {
+    id: "starter-2",
     title: "10 productivity tips for creators",
     type: "Blog post",
     time: "Yesterday",
+    content: "",
   },
   {
+    id: "starter-3",
     title: "Instagram launch announcement",
     type: "Social post",
     time: "Aug 12",
+    content: "",
   },
 ];
 
@@ -67,10 +83,90 @@ export default function DashboardPage() {
   const [idea, setIdea] = useState("");
   const [format, setFormat] = useState("Blog post");
   const [content, setContent] = useState("");
+  const [contentHistory, setContentHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [documentSearch, setDocumentSearch] = useState("");
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [savedDocuments, setSavedDocuments] = useState(documents);
+  const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
+  const [renamingDocumentId, setRenamingDocumentId] = useState<string | null>(null);
+  const [renameTitle, setRenameTitle] = useState("");
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("sparkwriter-documents");
+
+      if (stored) {
+        const parsed = JSON.parse(stored);
+
+        if (Array.isArray(parsed)) {
+          setSavedDocuments(parsed);
+        }
+      }
+    } catch {
+      console.error("Unable to load saved documents.");
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "sparkwriter-documents",
+        JSON.stringify(savedDocuments),
+      );
+    } catch {
+      console.error("Unable to save documents.");
+    }
+  }, [savedDocuments]);
+
+  useEffect(() => {
+    if (!editing || !content.trim()) return;
+
+    setSaveStatus("saving");
+
+    const timer = window.setTimeout(() => {
+      saveDocument(content, format, activeDocumentId);
+      setSaveStatus("saved");
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [content, editing, format, activeDocumentId]);
+
+  function updateContentWithHistory(nextContent: string) {
+    setContent(nextContent);
+
+    setContentHistory((current) => {
+      const nextHistory = current.slice(0, historyIndex + 1);
+      nextHistory.push(nextContent);
+      return nextHistory.slice(-30);
+    });
+
+    setHistoryIndex((current) => Math.min(current + 1, 29));
+  }
+
+  function undoContent() {
+    if (historyIndex <= 0) return;
+
+    const nextIndex = historyIndex - 1;
+    setHistoryIndex(nextIndex);
+    setContent(contentHistory[nextIndex]);
+  }
+
+  function redoContent() {
+    if (historyIndex >= contentHistory.length - 1) return;
+
+    const nextIndex = historyIndex + 1;
+    setHistoryIndex(nextIndex);
+    setContent(contentHistory[nextIndex]);
+  }
 
   async function generateContent() {
+
     if (!idea.trim()) {
       setError("Please enter an idea first.");
       return;
@@ -95,10 +191,15 @@ export default function DashboardPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to generate content.");
+        const demoContent = createDemoContent(idea, format);
+        updateContentWithHistory(demoContent);
+        saveDocument(demoContent, format, null);
+        setError("AI credits are unavailable, so SparkWriter is using Demo Mode.");
+        return;
       }
 
-      setContent(data.content || "");
+      updateContentWithHistory(data.content || "");
+      saveDocument(data.content || "", format, null);
     } catch (err) {
       setError(
         err instanceof Error
@@ -110,7 +211,171 @@ export default function DashboardPage() {
     }
   }
 
-  function selectFormat(value: string) {
+  async function runWritingAction(action: string) {
+    if (!content.trim()) {
+      setError("Generate some content first.");
+      return;
+    }
+
+    setActionLoading(action);
+    setError("");
+
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          idea: content,
+          type: `${action} ${format}`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to process the content.");
+      }
+
+      const updatedContent = data.content || "";
+
+      if (!updatedContent.trim()) {
+        throw new Error("The AI returned empty content.");
+      }
+
+      updateContentWithHistory(updatedContent);
+      saveDocument(updatedContent, format);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while editing the content.",
+      );
+    } finally {
+      setActionLoading("");
+    }
+  }
+
+  async function copyContent() {
+  try {
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  } catch {
+    setError("Unable to copy content.");
+  }
+}
+  function deleteDocument(id: string) {
+    const documentToDelete = savedDocuments.find(
+      (document) => document.id === id,
+    );
+
+    if (!documentToDelete) return;
+
+    const confirmed = window.confirm(
+      `Delete "${documentToDelete.title}"? This cannot be undone.`,
+    );
+
+    if (!confirmed) return;
+
+    setSavedDocuments((current) =>
+      current.filter((document) => document.id !== id),
+    );
+
+    if (activeDocumentId === id) {
+      setActiveDocumentId(null);
+      setContent("");
+      setIdea("");
+      setFormat("Blog post");
+      setContentHistory([]);
+      setHistoryIndex(-1);
+      setEditing(false);
+      setSaveStatus("saved");
+    }
+  }
+
+  function startRenamingDocument(document: SavedDocument) {
+    setRenamingDocumentId(document.id);
+    setRenameTitle(document.title);
+  }
+
+  function cancelRenamingDocument() {
+    setRenamingDocumentId(null);
+    setRenameTitle("");
+  }
+
+  function saveRenamedDocument(id: string) {
+    const title = renameTitle.trim();
+
+    if (!title) {
+      setError("Document title cannot be empty.");
+      return;
+    }
+
+    setSavedDocuments((current) =>
+      current.map((document) =>
+        document.id === id
+          ? {
+              ...document,
+              title: title.slice(0, 80),
+              time: "Just now",
+            }
+          : document,
+      ),
+    );
+
+    if (activeDocumentId === id) {
+      setIdea(title.slice(0, 80));
+    }
+
+    cancelRenamingDocument();
+    setError("");
+  }
+
+  function saveDocument(
+    text: string,
+    type: string,
+    documentId: string | null = activeDocumentId,
+  ) {
+    const firstLine =
+      text
+        .split("\n")
+        .map((line: string) => line.replace(/^#+\s*/, "").trim())
+        .find((line: string) => line.length > 0) || "Untitled document";
+
+    const title = firstLine.slice(0, 80);
+    const id = documentId || Date.now().toString();
+
+    setSavedDocuments((current) => {
+      const existing = current.find((document) => document.id === id);
+
+      const updatedDocument: SavedDocument = {
+        id,
+        title,
+        type,
+        time: "Just now",
+        content: text,
+      };
+
+      if (existing) {
+        return [
+          updatedDocument,
+          ...current.filter((document) => document.id !== id),
+        ].slice(0, 10);
+      }
+
+      return [updatedDocument, ...current].slice(0, 10);
+    });
+
+    setActiveDocumentId(id);
+    return id;
+  }
+
+ function selectFormat(value: string) {
     setFormat(value);
     setError("");
   }
@@ -153,7 +418,23 @@ export default function DashboardPage() {
         </div>
 
         <div className="p-4">
-          <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white">
+          <button
+            onClick={() => {
+              setActiveDocumentId(null);
+              setIdea("");
+              setFormat("Blog post");
+              setContent("");
+              setContentHistory([]);
+              setHistoryIndex(-1);
+              setEditing(false);
+              setError("");
+              setCopied(false);
+              setSaveStatus("saved");
+              setMenuOpen(false);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
             <Plus size={17} />
             New document
           </button>
@@ -294,34 +575,124 @@ export default function DashboardPage() {
 
           {content && (
             <section className="mt-8">
-              <div className="mb-4">
-                <h2 className="text-lg font-bold">Generated content</h2>
-                <p className="mt-1 text-xs text-slate-400">
-                  Your AI-generated {format.toLowerCase()}.
-                </p>
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold">Generated content</h2>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Your AI-generated {format.toLowerCase()}.
+                  </p>
+                </div>
+
+                <span className="text-xs text-slate-400">
+                  {content.trim().split(/\\s+/).filter(Boolean).length} words
+                </span>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                <textarea
-                  value={content}
-                  onChange={(event) => setContent(event.target.value)}
-                  className="min-h-[260px] w-full resize-y text-sm leading-7 text-slate-700 outline-none"
-                />
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                {editing ? (
+                  <div className="p-5 sm:p-8">
+                    <textarea
+                      value={content}
+                      onChange={(event) =>
+                        updateContentWithHistory(event.target.value)
+                      }
+                      className="min-h-[500px] w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white"
+                      placeholder="Write or edit your content here..."
+                      spellCheck
+                    />
 
-                <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3 text-xs">
+                        <span
+                          className={
+                            saveStatus === "saving"
+                              ? "text-amber-600"
+                              : "text-emerald-600"
+                          }
+                        >
+                          {saveStatus === "saving"
+                            ? "Saving..."
+                            : "Saved ✓"}
+                        </span>
+
+                        <span className="hidden text-slate-400 sm:inline">
+                          Your changes are tracked by Undo and Redo.
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          saveDocument(content, format, activeDocumentId);
+                          setEditing(false);
+                        }}
+                        className="rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-semibold text-white"
+                      >
+                        Save changes
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <article className="prose prose-slate max-w-none p-5 sm:p-8">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {content}
+                    </ReactMarkdown>
+                  </article>
+                )}
+
+                <div className="flex flex-wrap gap-2 border-t border-slate-100 p-5">
                   <button
-                    onClick={() => navigator.clipboard?.writeText(content)}
-                    className="rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-semibold text-white"
+                    onClick={undoContent}
+                    disabled={historyIndex <= 0 || !!actionLoading}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Copy content
+                    ↶ Undo
+                  </button>
+
+                  <button
+                    onClick={redoContent}
+                    disabled={
+                      historyIndex < 0 ||
+                      historyIndex >= contentHistory.length - 1 ||
+                      !!actionLoading
+                    }
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    ↷ Redo
+                  </button>
+
+                  <button
+                    onClick={copyContent}
+                    disabled={!!actionLoading}
+                    className="rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50"
+                  >
+                    {copied ? "Copied ✓" : "Copy content"}
+                  </button>
+
+                  {["Improve", "Shorten", "Expand", "Rewrite"].map((action) => (
+                    <button
+                      key={action}
+                      onClick={() => runWritingAction(action)}
+                      disabled={!!actionLoading || loading}
+                      className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {actionLoading === action ? "Working..." : action}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => setEditing((current) => !current)}
+                    disabled={!!actionLoading}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    {editing ? "Preview" : "Edit"}
                   </button>
 
                   <button
                     onClick={generateContent}
                     disabled={loading}
-                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold"
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:opacity-50"
                   >
-                    Regenerate
+                    {loading ? "Generating..." : "Regenerate"}
                   </button>
                 </div>
               </div>
@@ -370,37 +741,145 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <button className="text-xs font-semibold text-slate-500">
-                View all
-              </button>
+              <div className="flex items-center gap-2">
+                <input
+                  value={documentSearch}
+                  onChange={(event) => setDocumentSearch(event.target.value)}
+                  placeholder="Search documents..."
+                  className="w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none transition focus:border-slate-400 sm:w-52"
+                />
+
+                <button
+                  onClick={() => setDocumentSearch("")}
+                  disabled={!documentSearch}
+                  className="text-xs font-semibold text-slate-500 disabled:opacity-30"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              {documents.map((document, index) => (
-                <button
-                  key={document.title}
-                  className={`flex w-full items-center gap-4 px-4 py-4 text-left hover:bg-slate-50 sm:px-5 ${
-                    index !== documents.length - 1
+              {savedDocuments
+                .filter((document) => {
+                  const query = documentSearch.trim().toLowerCase();
+
+                  if (!query) return true;
+
+                  return (
+                    document.title.toLowerCase().includes(query) ||
+                    document.type.toLowerCase().includes(query)
+                  );
+                })
+                .map((document, index) => (
+                <div
+                  key={`${document.title}-${document.time}-${index}`}
+                  className={`flex items-center gap-3 px-4 py-4 sm:px-5 ${
+                    index !== savedDocuments.length - 1
                       ? "border-b border-slate-100"
                       : ""
                   }`}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
-                    <FileText size={17} />
-                  </div>
+                  <button
+                    onClick={() => {
+                      setActiveDocumentId(document.id);
+                      setContent(document.content || "");
+                      setFormat(document.type);
+                      setIdea(document.title);
+                      setError("");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className="flex min-w-0 flex-1 items-center gap-4 text-left hover:bg-slate-50"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                      <FileText size={17} />
+                    </div>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">
-                      {document.title}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      {renamingDocumentId === document.id ? (
+                        <input
+                          autoFocus
+                          value={renameTitle}
+                          onChange={(event) =>
+                            setRenameTitle(event.target.value)
+                          }
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              saveRenamedDocument(document.id);
+                            }
 
-                    <p className="mt-1 text-xs text-slate-400">
-                      {document.type} · {document.time}
-                    </p>
-                  </div>
+                            if (event.key === "Escape") {
+                              event.preventDefault();
+                              cancelRenamingDocument();
+                            }
+                          }}
+                          className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-semibold outline-none focus:border-slate-500"
+                          maxLength={80}
+                        />
+                      ) : (
+                        <p className="truncate text-sm font-semibold">
+                          {document.title}
+                        </p>
+                      )}
 
-                  <ArrowRight size={16} className="text-slate-300" />
-                </button>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {document.type} · {document.time}
+                      </p>
+                    </div>
+
+                    <ArrowRight size={16} className="text-slate-300" />
+                  </button>
+
+                  {renamingDocumentId === document.id ? (
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          saveRenamedDocument(document.id);
+                        }}
+                        className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-slate-100"
+                      >
+                        Save
+                      </button>
+
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          cancelRenamingDocument();
+                        }}
+                        className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-400 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          startRenamingDocument(document);
+                        }}
+                        className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                        title="Rename document"
+                      >
+                        Rename
+                      </button>
+
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteDocument(document.id);
+                        }}
+                        className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                        title="Delete document"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </section>
@@ -414,6 +893,69 @@ export default function DashboardPage() {
   );
 }
 
+function createDemoContent(idea: string, format: string) {
+  const title = idea.trim();
+
+  if (format === "Social post") {
+    return `${title}
+
+The way we create, work, and communicate is changing quickly. AI gives creators and businesses new tools to brainstorm ideas, create drafts, save time, and reach their audience more effectively.
+
+The key is not to let AI replace your creativity. Use it as a tool that helps you turn your ideas into better content, faster.
+
+What is one way you would use AI to improve your work?`;
+  }
+
+  if (format === "Video script") {
+    return `HOOK
+
+What if you could turn your idea about "${title}" into useful content faster?
+
+INTRODUCTION
+
+Today, we're looking at ${title} and why it matters.
+
+MAIN POINT
+
+AI and modern digital tools are changing how people create, work, and share information. They can help with brainstorming, research, first drafts, editing, and repurposing content.
+
+But technology works best when it supports human creativity. Your experience, ideas, opinions, and personal voice are what make the final content unique.
+
+PRACTICAL TAKEAWAY
+
+Start with your own idea, use technology to speed up the repetitive work, then review and improve the result before publishing.
+
+ENDING
+
+The future belongs to people who know how to combine their creativity with powerful tools. What will you create next?`;
+  }
+
+  return `# ${title}
+
+## Introduction
+
+${title} is an important topic in today's rapidly changing digital world. New technologies and ideas are creating opportunities for individuals, creators, and businesses to work more efficiently and reach more people.
+
+## Why It Matters
+
+Understanding ${title} can help people make better decisions, discover new opportunities, and adapt to changes in the way we work and communicate.
+
+## Key Opportunities
+
+One of the biggest opportunities is the ability to save time and improve productivity. Instead of spending all of their time on repetitive tasks, people can focus more on strategy, creativity, problem-solving, and building relationships.
+
+## Practical Ways to Get Started
+
+Start with a clear goal. Identify the tasks that take the most time, experiment with tools that can make those tasks easier, and always review the results before using them publicly.
+
+## The Human Element
+
+Technology can provide powerful assistance, but human judgment remains essential. Experience, creativity, context, and personal perspective help turn basic information into something genuinely valuable.
+
+## Conclusion
+
+${title} will continue to evolve as technology and society change. The people who learn how to use new tools thoughtfully will be better positioned to take advantage of future opportunities while maintaining their own creativity and voice.`;
+}
 function NavItem({
   icon: Icon,
   label,

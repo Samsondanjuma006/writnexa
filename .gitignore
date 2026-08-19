@@ -40,3 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.local
+
+# Local development backups
+*.before-*
+*.backup
+*.backup2
+*.broken
