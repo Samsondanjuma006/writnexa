@@ -259,17 +259,36 @@ export default function DashboardPage() {
   }
 
   async function copyContent() {
-  try {
-    await navigator.clipboard.writeText(content);
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
 
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  } catch {
-    setError("Unable to copy content.");
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {
+      setError("Unable to copy content.");
+    }
   }
-}
+
+  function downloadContent() {
+    if (!content.trim()) return;
+
+    const blob = new Blob([content], {
+      type: "text/plain;charset=utf-8",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${format.toLowerCase().replace(/\s+/g, "-")}-sparkwriter.txt`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
   function deleteDocument(id: string) {
     const documentToDelete = savedDocuments.find(
       (document) => document.id === id,
@@ -707,6 +726,14 @@ export default function DashboardPage() {
                     className="rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50"
                   >
                     {copied ? "Copied ✓" : "Copy content"}
+                  </button>
+
+                  <button
+                    onClick={downloadContent}
+                    disabled={!!actionLoading}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Download
                   </button>
 
                   {["Improve", "Shorten", "Expand", "Rewrite"].map((action) => (
