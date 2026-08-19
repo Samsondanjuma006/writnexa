@@ -634,18 +634,30 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <span className="text-xs text-slate-400">
-                  {content.trim().split(/\\s+/).filter(Boolean).length} words
-                  <span className="mx-2 text-slate-300">·</span>
-                  {content.length} characters
-                  <span className="mx-2 text-slate-300">·</span>
-                  {Math.max(
-                    1,
-                    Math.ceil(
-                      content.trim().split(/\\s+/).filter(Boolean).length / 200,
-                    ),
-                  )} min read
-                </span>
+                <div className="flex flex-wrap items-center justify-end gap-2 text-xs">
+                  <span className="text-slate-400">
+                    {content.trim().split(/\\s+/).filter(Boolean).length} words
+                    <span className="mx-2 text-slate-300">·</span>
+                    {content.length} characters
+                    <span className="mx-2 text-slate-300">·</span>
+                    {Math.max(
+                      1,
+                      Math.ceil(
+                        content.trim().split(/\\s+/).filter(Boolean).length / 200,
+                      ),
+                    )} min read
+                  </span>
+
+                  <span
+                    className={`rounded-full px-2.5 py-1 font-medium ${
+                      saveStatus === "saving"
+                        ? "bg-amber-50 text-amber-600"
+                        : "bg-emerald-50 text-emerald-600"
+                    }`}
+                  >
+                    {saveStatus === "saving" ? "Saving..." : "Saved"}
+                  </span>
+                </div>
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
