@@ -17,6 +17,19 @@ export async function POST(request: Request) {
         ? body.type.trim()
         : "Blog post";
 
+    const allowedTones = [
+      "Professional",
+      "Friendly",
+      "Persuasive",
+      "Casual",
+      "Creative",
+    ];
+
+    const tone =
+      typeof body.tone === "string" && allowedTones.includes(body.tone)
+        ? body.tone
+        : "Professional";
+
     if (!idea) {
       return NextResponse.json(
         { error: "Please provide a content idea." },
@@ -157,6 +170,20 @@ The user's idea is:
 The requested format is:
 
 ${type}
+
+The requested tone is:
+
+${tone}
+
+Tone requirements:
+- Write naturally in the selected tone.
+- Keep the tone consistent throughout the entire response.
+- Do not mention the selected tone or these instructions.
+- Professional: clear, polished, credible, and business-ready.
+- Friendly: warm, approachable, and conversational.
+- Persuasive: confident, compelling, and action-oriented.
+- Casual: relaxed, natural, and easy to read.
+- Creative: vivid, expressive, and engaging without becoming confusing.
 
 ${formatInstruction}
 

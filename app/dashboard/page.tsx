@@ -82,6 +82,7 @@ export default function DashboardPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [idea, setIdea] = useState("");
   const [format, setFormat] = useState("Blog post");
+  const [tone, setTone] = useState("Professional");
   const [content, setContent] = useState("");
   const [contentHistory, setContentHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -184,6 +185,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           idea,
           type: format,
+          tone,
         }),
       });
 
@@ -538,7 +540,7 @@ export default function DashboardPage() {
               />
 
               <div className="flex flex-col gap-2 border-t border-white/10 pt-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {["Blog post", "Social post", "Video script"].map((item) => (
                     <button
                       key={item}
@@ -552,6 +554,21 @@ export default function DashboardPage() {
                       {item}
                     </button>
                   ))}
+
+                  <select
+                    value={tone}
+                    onChange={(event) => setTone(event.target.value)}
+                    disabled={loading}
+                    className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-xs font-medium text-white outline-none transition focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {["Professional", "Friendly", "Persuasive", "Casual", "Creative"].map(
+                      (item) => (
+                        <option key={item} value={item} className="text-slate-950">
+                          {item}
+                        </option>
+                      ),
+                    )}
+                  </select>
                 </div>
 
                 <button
