@@ -174,7 +174,6 @@ export default function DashboardPage() {
 
     setLoading(true);
     setError("");
-    setContent("");
 
     try {
       const response = await fetch("/api/generate", {
