@@ -557,10 +557,19 @@ export default function DashboardPage() {
                 <button
                   onClick={generateContent}
                   disabled={loading}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-bold text-slate-950 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {loading ? "Generating..." : "Generate"}
-                  {!loading && <ArrowRight size={15} />}
+                  {loading ? (
+                    <>
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-950" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      Generate
+                      <ArrowRight size={15} />
+                    </>
+                  )}
                 </button>
               </div>
 
