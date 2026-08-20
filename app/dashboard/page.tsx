@@ -50,6 +50,8 @@ type SavedDocument = {
   id: string;
   title: string;
   type: string;
+  tone?: string;
+  idea?: string;
   time: string;
   content: string;
 };
@@ -878,6 +880,20 @@ export default function DashboardPage() {
     setError("");
   }
 
+  function openDocument(document: SavedDocument) {
+    setActiveDocumentId(document.id);
+    setIdea(document.idea || document.title);
+    setFormat(document.type || "Blog post");
+    setTone(document.tone || "Professional");
+    setContent(document.content || "");
+    setContentHistory(document.content ? [document.content] : []);
+    setHistoryIndex(document.content ? 0 : -1);
+    setEditing(false);
+    setError("");
+    setCopied(false);
+    setSaveStatus("saved");
+  }
+
   function saveDocument(
     text: string,
     type: string,
@@ -899,6 +915,8 @@ export default function DashboardPage() {
         id,
         title: existing?.title || title,
         type,
+        tone,
+        idea,
         time: "Just now",
         content: text,
       };
@@ -1408,11 +1426,7 @@ export default function DashboardPage() {
                 >
                   <button
                     onClick={() => {
-                      setActiveDocumentId(document.id);
-                      setContent(document.content || "");
-                      setFormat(document.type);
-                      setIdea(document.title);
-                      setError("");
+                      openDocument(document);
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                     className="flex min-w-0 flex-1 items-center gap-4 text-left hover:bg-slate-50"
