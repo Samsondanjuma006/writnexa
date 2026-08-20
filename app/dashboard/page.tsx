@@ -338,6 +338,9 @@ export default function DashboardPage() {
         Paragraph,
         TextRun,
         HeadingLevel,
+        Footer,
+        PageNumber,
+        AlignmentType,
       } = await import("docx");
 
       function parseInlineMarkdown(text: string) {
@@ -454,6 +457,22 @@ export default function DashboardPage() {
         });
       });
 
+      const exportTitle =
+        savedDocuments.find(
+          (document) => document.id === activeDocumentId,
+        )?.title ||
+        content
+          .split("\n")
+          .map((line) => line.replace(/^#+\s*/, "").trim())
+          .find((line) => line.length > 0) ||
+        "SparkWriter Document";
+
+      const exportDate = new Date().toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
       const docxDocument = new Document({
         numbering: {
           config: [
@@ -473,7 +492,43 @@ export default function DashboardPage() {
         sections: [
           {
             properties: {},
-            children: paragraphs,
+            footers: {
+              default: new Footer({
+                children: [
+                  new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                      new TextRun({
+                        text: "Created with SparkWriter • Page ",
+                        size: 18,
+                      }),
+                      new TextRun({
+                        children: [PageNumber.CURRENT],
+                        size: 18,
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            },
+            children: [
+              new Paragraph({
+                text: exportTitle,
+                heading: HeadingLevel.TITLE,
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `${format} • Generated ${exportDate}`,
+                    italics: true,
+                  }),
+                ],
+                spacing: {
+                  after: 300,
+                },
+              }),
+              ...paragraphs,
+            ],
           },
         ],
       });
