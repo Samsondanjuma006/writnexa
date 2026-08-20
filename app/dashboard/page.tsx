@@ -332,7 +332,64 @@ export default function DashboardPage() {
     if (!content.trim()) return;
 
     try {
-      const { Document, Packer, Paragraph, TextRun } = await import("docx");
+      const {
+        Document,
+        Packer,
+        Paragraph,
+        TextRun,
+        HeadingLevel,
+      } = await import("docx");
+
+      function parseInlineMarkdown(text: string) {
+        const runs: Array<{
+          text: string;
+          bold?: boolean;
+          italics?: boolean;
+          font?: string;
+        }> = [];
+
+        const pattern = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
+        let lastIndex = 0;
+
+        for (const match of text.matchAll(pattern)) {
+          const index = match.index ?? 0;
+
+          if (index > lastIndex) {
+            runs.push({
+              text: text.slice(lastIndex, index),
+            });
+          }
+
+          const value = match[0];
+
+          if (value.startsWith("**")) {
+            runs.push({
+              text: value.slice(2, -2),
+              bold: true,
+            });
+          } else if (value.startsWith("*")) {
+            runs.push({
+              text: value.slice(1, -1),
+              italics: true,
+            });
+          } else {
+            runs.push({
+              text: value.slice(1, -1),
+              font: "Courier New",
+            });
+          }
+
+          lastIndex = index + value.length;
+        }
+
+        if (lastIndex < text.length) {
+          runs.push({
+            text: text.slice(lastIndex),
+          });
+        }
+
+        return runs;
+      }
 
       const paragraphs = content.split("\n").map((line) => {
         const trimmed = line.trim();
@@ -341,32 +398,78 @@ export default function DashboardPage() {
           return new Paragraph({ text: "" });
         }
 
-        const headingMatch = trimmed.match(/^#{1,6}\s+(.+)$/);
+        const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
 
         if (headingMatch) {
-          const level = Math.min(
-            headingMatch[0].match(/^#+/)?.[0].length || 1,
-            6,
-          );
+          const level = headingMatch[1].length;
+
+          const headingLevels = [
+            HeadingLevel.HEADING_1,
+            HeadingLevel.HEADING_2,
+            HeadingLevel.HEADING_3,
+            HeadingLevel.HEADING_4,
+            HeadingLevel.HEADING_5,
+            HeadingLevel.HEADING_6,
+          ];
 
           return new Paragraph({
-            text: headingMatch[1],
-            heading: `Heading${level}` as
-              | "Heading1"
-              | "Heading2"
-              | "Heading3"
-              | "Heading4"
-              | "Heading5"
-              | "Heading6",
+            heading: headingLevels[level - 1],
+            children: parseInlineMarkdown(headingMatch[2]).map(
+              (run) => new TextRun(run),
+            ),
+          });
+        }
+
+        const bulletMatch = trimmed.match(/^[-*]\s+(.+)$/);
+
+        if (bulletMatch) {
+          return new Paragraph({
+            bullet: {
+              level: 0,
+            },
+            children: parseInlineMarkdown(bulletMatch[1]).map(
+              (run) => new TextRun(run),
+            ),
+          });
+        }
+
+        const numberedMatch = trimmed.match(/^(\d+)[.)]\s+(.+)$/);
+
+        if (numberedMatch) {
+          return new Paragraph({
+            numbering: {
+              reference: "sparkwriter-numbered",
+              level: 0,
+            },
+            children: parseInlineMarkdown(numberedMatch[2]).map(
+              (run) => new TextRun(run),
+            ),
           });
         }
 
         return new Paragraph({
-          children: [new TextRun(trimmed)],
+          children: parseInlineMarkdown(trimmed).map(
+            (run) => new TextRun(run),
+          ),
         });
       });
 
       const docxDocument = new Document({
+        numbering: {
+          config: [
+            {
+              reference: "sparkwriter-numbered",
+              levels: [
+                {
+                  level: 0,
+                  format: "decimal",
+                  text: "%1.",
+                  alignment: "left",
+                },
+              ],
+            },
+          ],
+        },
         sections: [
           {
             properties: {},
