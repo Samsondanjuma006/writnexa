@@ -328,6 +328,69 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url);
   }
 
+  async function downloadDocx() {
+    if (!content.trim()) return;
+
+    try {
+      const { Document, Packer, Paragraph, TextRun } = await import("docx");
+
+      const paragraphs = content.split("\n").map((line) => {
+        const trimmed = line.trim();
+
+        if (!trimmed) {
+          return new Paragraph({ text: "" });
+        }
+
+        const headingMatch = trimmed.match(/^#{1,6}\s+(.+)$/);
+
+        if (headingMatch) {
+          const level = Math.min(
+            headingMatch[0].match(/^#+/)?.[0].length || 1,
+            6,
+          );
+
+          return new Paragraph({
+            text: headingMatch[1],
+            heading: `Heading${level}` as
+              | "Heading1"
+              | "Heading2"
+              | "Heading3"
+              | "Heading4"
+              | "Heading5"
+              | "Heading6",
+          });
+        }
+
+        return new Paragraph({
+          children: [new TextRun(trimmed)],
+        });
+      });
+
+      const docxDocument = new Document({
+        sections: [
+          {
+            properties: {},
+            children: paragraphs,
+          },
+        ],
+      });
+
+      const blob = await Packer.toBlob(docxDocument);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `${getExportBaseName()}-sparkwriter.docx`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Unable to create the Word document.");
+    }
+  }
+
   function deleteDocument(id: string) {
     const documentToDelete = savedDocuments.find(
       (document) => document.id === id,
@@ -793,6 +856,14 @@ export default function DashboardPage() {
                     className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Download Markdown
+                  </button>
+
+                  <button
+                    onClick={downloadDocx}
+                    disabled={!!actionLoading}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Download DOCX
                   </button>
 
                   {["Improve", "Shorten", "Expand", "Rewrite"].map((action) => (
