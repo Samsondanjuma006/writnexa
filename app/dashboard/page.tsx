@@ -328,6 +328,268 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url);
   }
 
+  async function downloadPdf() {
+    if (!content.trim()) return;
+
+    try {
+      const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+
+      const pdfDoc = await PDFDocument.create();
+
+      const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+      const monoFont = await pdfDoc.embedFont(StandardFonts.Courier);
+
+      const exportTitle =
+        savedDocuments.find(
+          (document) => document.id === activeDocumentId,
+        )?.title ||
+        content
+          .split("\n")
+          .map((line) => line.replace(/^#+\s*/, "").trim())
+          .find((line) => line.length > 0) ||
+        "SparkWriter Document";
+
+      const exportDate = new Date().toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+      const pageWidth = 612;
+      const pageHeight = 792;
+      const margin = 54;
+      const contentWidth = pageWidth - margin * 2;
+
+      let page = pdfDoc.addPage([pageWidth, pageHeight]);
+      let y = pageHeight - margin;
+
+      function addPage() {
+        page = pdfDoc.addPage([pageWidth, pageHeight]);
+        y = pageHeight - margin;
+      }
+
+      function ensureSpace(height: number) {
+        if (y - height < margin) {
+          addPage();
+        }
+      }
+
+      function drawWrappedText(
+        text: string,
+        options: {
+          font?: typeof regularFont;
+          size?: number;
+          indent?: number;
+          lineGap?: number;
+        } = {},
+      ) {
+        const font = options.font || regularFont;
+        const size = options.size || 11;
+        const indent = options.indent || 0;
+        const lineGap = options.lineGap || 5;
+        const maxWidth = contentWidth - indent;
+
+        const words = text.split(/\s+/);
+        let currentLine = "";
+
+        for (const word of words) {
+          const testLine = currentLine
+            ? `${currentLine} ${word}`
+            : word;
+
+          if (font.widthOfTextAtSize(testLine, size) <= maxWidth) {
+            currentLine = testLine;
+          } else {
+            if (currentLine) {
+              ensureSpace(size + lineGap);
+              page.drawText(currentLine, {
+                x: margin + indent,
+                y,
+                size,
+                font,
+                color: rgb(0.12, 0.14, 0.18),
+              });
+              y -= size + lineGap;
+            }
+
+            currentLine = word;
+          }
+        }
+
+        if (currentLine) {
+          ensureSpace(size + lineGap);
+          page.drawText(currentLine, {
+            x: margin + indent,
+            y,
+            size,
+            font,
+            color: rgb(0.12, 0.14, 0.18),
+          });
+          y -= size + lineGap;
+        }
+      }
+
+      function drawParagraph(text: string) {
+        const pattern = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
+        const matches = [...text.matchAll(pattern)];
+
+        if (!matches.length) {
+          drawWrappedText(text);
+          return;
+        }
+
+        let remaining = text;
+
+        for (const match of matches) {
+          const value = match[0];
+          const index = remaining.indexOf(value);
+
+          if (index > 0) {
+            drawWrappedText(remaining.slice(0, index));
+          }
+
+          if (value.startsWith("**")) {
+            drawWrappedText(value.slice(2, -2), {
+              font: boldFont,
+            });
+          } else if (value.startsWith("*")) {
+            drawWrappedText(value.slice(1, -1), {
+              font: italicFont,
+            });
+          } else {
+            drawWrappedText(value.slice(1, -1), {
+              font: monoFont,
+            });
+          }
+
+          remaining = remaining.slice(index + value.length);
+        }
+
+        if (remaining.trim()) {
+          drawWrappedText(remaining);
+        }
+      }
+
+      page.drawText(exportTitle, {
+        x: margin,
+        y,
+        size: 24,
+        font: boldFont,
+        color: rgb(0.05, 0.06, 0.08),
+      });
+
+      y -= 32;
+
+      page.drawText(`${format} • Generated ${exportDate}`, {
+        x: margin,
+        y,
+        size: 10,
+        font: italicFont,
+        color: rgb(0.40, 0.43, 0.48),
+      });
+
+      y -= 30;
+
+      const lines = content.split("\n");
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+
+        if (!trimmed) {
+          y -= 8;
+          continue;
+        }
+
+        const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+
+        if (headingMatch) {
+          const level = headingMatch[1].length;
+          const headingSize =
+            level === 1 ? 20 :
+            level === 2 ? 17 :
+            level === 3 ? 15 :
+            level === 4 ? 13 :
+            12;
+
+          y -= 8;
+          ensureSpace(headingSize + 12);
+
+          drawWrappedText(headingMatch[2], {
+            font: boldFont,
+            size: headingSize,
+            lineGap: 6,
+          });
+
+          y -= 5;
+          continue;
+        }
+
+        const bulletMatch = trimmed.match(/^[-*]\s+(.+)$/);
+
+        if (bulletMatch) {
+          drawWrappedText(`• ${bulletMatch[1]}`, {
+            indent: 10,
+          });
+          continue;
+        }
+
+        const numberedMatch = trimmed.match(/^(\d+)[.)]\s+(.+)$/);
+
+        if (numberedMatch) {
+          drawWrappedText(
+            `${numberedMatch[1]}. ${numberedMatch[2]}`,
+            {
+              indent: 10,
+            },
+          );
+          continue;
+        }
+
+        drawParagraph(trimmed);
+        y -= 4;
+      }
+
+      const pages = pdfDoc.getPages();
+
+      pages.forEach((currentPage, index) => {
+        currentPage.drawText(
+          `Created with SparkWriter • Page ${index + 1} of ${pages.length}`,
+          {
+            x: margin,
+            y: 24,
+            size: 8,
+            font: regularFont,
+            color: rgb(0.45, 0.47, 0.50),
+          },
+        );
+      });
+
+      const pdfBytes = await pdfDoc.save();
+
+      const pdfBuffer = new ArrayBuffer(pdfBytes.byteLength);
+      new Uint8Array(pdfBuffer).set(pdfBytes);
+
+      const blob = new Blob([pdfBuffer], {
+        type: "application/pdf",
+      });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `${getExportBaseName()}-sparkwriter.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Unable to create the PDF document.");
+    }
+  }
+
   async function downloadDocx() {
     if (!content.trim()) return;
 
@@ -1022,6 +1284,14 @@ export default function DashboardPage() {
                     className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Download DOCX
+                  </button>
+
+                  <button
+                    onClick={downloadPdf}
+                    disabled={!!actionLoading}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Download PDF
                   </button>
 
                   {["Improve", "Shorten", "Expand", "Rewrite"].map((action) => (
