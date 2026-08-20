@@ -22,6 +22,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 const formats = [
   {
@@ -81,6 +82,7 @@ const documents: SavedDocument[] = [
 ];
 
 export default function DashboardPage() {
+  const supabase = createClient();
   const [menuOpen, setMenuOpen] = useState(false);
   const [idea, setIdea] = useState("");
   const [format, setFormat] = useState("Blog post");
@@ -99,6 +101,12 @@ export default function DashboardPage() {
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
   const [renamingDocumentId, setRenamingDocumentId] = useState<string | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
 
   useEffect(() => {
     try {
@@ -1062,9 +1070,14 @@ export default function DashboardPage() {
               <Bell size={18} />
             </button>
 
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">
+            <button
+              type="button"
+              onClick={handleLogout}
+              title="Log out"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white transition hover:opacity-80"
+            >
               SW
-            </div>
+            </button>
           </div>
         </header>
 
