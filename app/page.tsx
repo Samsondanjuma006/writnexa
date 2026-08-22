@@ -144,13 +144,16 @@ export default function Home() {
             </p>
 
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <button className="group flex h-13 w-full items-center justify-center gap-2 rounded-full bg-[#18181b] px-7 text-sm font-semibold text-white shadow-xl shadow-black/15 transition hover:-translate-y-0.5 hover:bg-zinc-800 sm:w-auto">
+              <a
+                href="/signup"
+                className="group flex h-13 w-full items-center justify-center gap-2 rounded-full bg-[#18181b] px-7 text-sm font-semibold text-white shadow-xl shadow-black/15 transition hover:-translate-y-0.5 hover:bg-zinc-800 sm:w-auto"
+              >
                 Start writing for free
                 <ArrowRight
                   size={16}
                   className="transition-transform group-hover:translate-x-0.5"
                 />
-              </button>
+              </a>
 
               <button className="flex h-13 w-full items-center justify-center gap-2 rounded-full border border-black/[0.09] bg-white/70 px-7 text-sm font-semibold text-zinc-700 transition hover:bg-white sm:w-auto">
                 <Play size={15} fill="currentColor" />
