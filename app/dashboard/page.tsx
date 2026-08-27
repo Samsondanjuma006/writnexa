@@ -109,19 +109,65 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("sparkwriter-documents");
+    async function loadDocuments() {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-      if (stored) {
-        const parsed = JSON.parse(stored);
+        if (userError) {
+          throw userError;
+        }
 
-        if (Array.isArray(parsed)) {
-          setSavedDocuments(parsed);
+        if (!user) {
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("documents")
+          .select("id, title, type, tone, idea, content, created_at, updated_at")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(10);
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          const documentsFromSupabase: SavedDocument[] = data.map((document) => ({
+            id: document.id,
+            title: document.title,
+            type: document.type,
+            tone: document.tone,
+            idea: document.idea,
+            time: new Date(document.updated_at).toLocaleDateString(),
+            content: document.content,
+          }));
+
+          setSavedDocuments(documentsFromSupabase);
+        }
+      } catch (error) {
+        console.error("Unable to load documents from Supabase:", error);
+
+        try {
+          const stored = localStorage.getItem("sparkwriter-documents");
+
+          if (stored) {
+            const parsed = JSON.parse(stored);
+
+            if (Array.isArray(parsed)) {
+              setSavedDocuments(parsed);
+            }
+          }
+        } catch {
+          console.error("Unable to load local document backup.");
         }
       }
-    } catch {
-      console.error("Unable to load saved documents.");
     }
+
+    loadDocuments();
   }, []);
 
   useEffect(() => {
@@ -902,7 +948,7 @@ export default function DashboardPage() {
     setSaveStatus("saved");
   }
 
-  function saveDocument(
+  async function saveDocument(
     text: string,
     type: string,
     documentId: string | null = activeDocumentId,
@@ -914,22 +960,35 @@ export default function DashboardPage() {
         .find((line: string) => line.length > 0) || "Untitled document";
 
     const title = firstLine.slice(0, 80);
-    const id = documentId || Date.now().toString();
+
+    const isUuid = (value: string | null): boolean =>
+      !!value &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        value,
+      );
+
+    const id = isUuid(documentId)
+      ? documentId!
+      : crypto.randomUUID();
+
+    const existing = savedDocuments.find((document) => document.id === id);
+
+    const updatedDocument: SavedDocument = {
+      id,
+      title: existing?.title || title,
+      type,
+      tone,
+      idea,
+      time: "Just now",
+      content: text,
+    };
 
     setSavedDocuments((current) => {
-      const existing = current.find((document) => document.id === id);
+      const existingDocument = current.find(
+        (document) => document.id === id,
+      );
 
-      const updatedDocument: SavedDocument = {
-        id,
-        title: existing?.title || title,
-        type,
-        tone,
-        idea,
-        time: "Just now",
-        content: text,
-      };
-
-      if (existing) {
+      if (existingDocument) {
         return [
           updatedDocument,
           ...current.filter((document) => document.id !== id),
@@ -940,6 +999,52 @@ export default function DashboardPage() {
     });
 
     setActiveDocumentId(id);
+
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!user) {
+        throw new Error("You must be signed in to save documents.");
+      }
+
+      const { error: saveError } = await supabase
+        .from("documents")
+        .upsert(
+          {
+            id,
+            user_id: user.id,
+            title: updatedDocument.title,
+            type: updatedDocument.type,
+            tone: updatedDocument.tone || "Professional",
+            idea: updatedDocument.idea || "",
+            content: updatedDocument.content,
+          },
+          { onConflict: "id" },
+        );
+
+      if (saveError) {
+        throw saveError;
+      }
+    } catch (error) {
+      console.error("Unable to save document to Supabase:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === "object" && error !== null && "message" in error
+            ? String((error as { message?: unknown }).message)
+            : "Unknown Supabase save error.";
+
+      setError(`Supabase save failed: ${message}`);
+    }
+
     return id;
   }
 
