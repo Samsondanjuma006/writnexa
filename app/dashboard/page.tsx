@@ -182,6 +182,35 @@ export default function DashboardPage() {
   }, [savedDocuments]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedDocumentId = params.get("document");
+
+    if (!requestedDocumentId) return;
+
+    const requestedDocument = savedDocuments.find(
+      (document) => document.id === requestedDocumentId,
+    );
+
+    if (!requestedDocument) return;
+
+    setActiveDocumentId(requestedDocument.id);
+    setIdea(requestedDocument.idea || requestedDocument.title);
+    setFormat(requestedDocument.type || "Blog post");
+    setTone(requestedDocument.tone || "Professional");
+    setContent(requestedDocument.content || "");
+    setContentHistory(
+      requestedDocument.content ? [requestedDocument.content] : [],
+    );
+    setHistoryIndex(requestedDocument.content ? 0 : -1);
+    setEditing(false);
+    setError("");
+    setCopied(false);
+    setSaveStatus("saved");
+
+    window.history.replaceState({}, "", "/dashboard");
+  }, [savedDocuments]);
+
+  useEffect(() => {
     if (!editing || !content.trim()) return;
 
     setSaveStatus("saving");
@@ -1164,8 +1193,8 @@ export default function DashboardPage() {
             Workspace
           </p>
 
-          <NavItem icon={LayoutDashboard} label="Dashboard" active />
-          <NavItem icon={FileText} label="Documents" />
+          <NavItem icon={LayoutDashboard} label="Dashboard" href="/dashboard" active />
+          <NavItem icon={FileText} label="Documents" href="/documents" />
           <NavItem icon={FolderOpen} label="Projects" />
           <NavItem icon={BookOpen} label="Templates" />
 
@@ -1763,20 +1792,31 @@ ${title} will continue to evolve as technology and society change. The people wh
 function NavItem({
   icon: Icon,
   label,
+  href,
   active = false,
 }: {
   icon: LucideIcon;
   label: string;
+  href?: string;
   active?: boolean;
 }) {
+  const className = `mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${
+    active
+      ? "bg-slate-100 text-slate-950"
+      : "text-slate-500 hover:bg-slate-50 hover:text-slate-950"
+  }`;
+
+  if (href) {
+    return (
+      <a href={href} className={className}>
+        <Icon size={17} />
+        {label}
+      </a>
+    );
+  }
+
   return (
-    <button
-      className={`mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${
-        active
-          ? "bg-slate-100 text-slate-950"
-          : "text-slate-500 hover:bg-slate-50 hover:text-slate-950"
-      }`}
-    >
+    <button type="button" className={className}>
       <Icon size={17} />
       {label}
     </button>
