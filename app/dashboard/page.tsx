@@ -867,7 +867,7 @@ export default function DashboardPage() {
     }
   }
 
-  function deleteDocument(id: string) {
+  async function deleteDocument(id: string) {
     const documentToDelete = savedDocuments.find(
       (document) => document.id === id,
     );
@@ -880,19 +880,41 @@ export default function DashboardPage() {
 
     if (!confirmed) return;
 
-    setSavedDocuments((current) =>
-      current.filter((document) => document.id !== id),
-    );
+    setError("");
 
-    if (activeDocumentId === id) {
-      setActiveDocumentId(null);
-      setContent("");
-      setIdea("");
-      setFormat("Blog post");
-      setContentHistory([]);
-      setHistoryIndex(-1);
-      setEditing(false);
-      setSaveStatus("saved");
+    try {
+      const { error: deleteError } = await supabase
+        .from("documents")
+        .delete()
+        .eq("id", id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      setSavedDocuments((current) =>
+        current.filter((document) => document.id !== id),
+      );
+
+      if (activeDocumentId === id) {
+        setActiveDocumentId(null);
+        setContent("");
+        setIdea("");
+        setFormat("Blog post");
+        setContentHistory([]);
+        setHistoryIndex(-1);
+        setEditing(false);
+        setSaveStatus("saved");
+      }
+    } catch (error) {
+      console.error("Unable to delete document from Supabase:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to delete document.";
+
+      setError(`Supabase delete failed: ${message}`);
     }
   }
 
@@ -906,7 +928,7 @@ export default function DashboardPage() {
     setRenameTitle("");
   }
 
-  function saveRenamedDocument(id: string) {
+  async function saveRenamedDocument(id: string) {
     const title = renameTitle.trim();
 
     if (!title) {
@@ -914,24 +936,48 @@ export default function DashboardPage() {
       return;
     }
 
-    setSavedDocuments((current) =>
-      current.map((document) =>
-        document.id === id
-          ? {
-              ...document,
-              title: title.slice(0, 80),
-              time: "Just now",
-            }
-          : document,
-      ),
-    );
-
-    if (activeDocumentId === id) {
-      setIdea(title.slice(0, 80));
-    }
-
-    cancelRenamingDocument();
+    const nextTitle = title.slice(0, 80);
     setError("");
+
+    try {
+      const { error: renameError } = await supabase
+        .from("documents")
+        .update({
+          title: nextTitle,
+        })
+        .eq("id", id);
+
+      if (renameError) {
+        throw renameError;
+      }
+
+      setSavedDocuments((current) =>
+        current.map((document) =>
+          document.id === id
+            ? {
+                ...document,
+                title: nextTitle,
+                time: "Just now",
+              }
+            : document,
+        ),
+      );
+
+      if (activeDocumentId === id) {
+        setIdea(nextTitle);
+      }
+
+      cancelRenamingDocument();
+    } catch (error) {
+      console.error("Unable to rename document in Supabase:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to rename document.";
+
+      setError(`Supabase rename failed: ${message}`);
+    }
   }
 
   function openDocument(document: SavedDocument) {
