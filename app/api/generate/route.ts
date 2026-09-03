@@ -187,7 +187,10 @@ Requirements:
 - Explain why the announcement matters to the intended audience.
 - Include a clear call to action.
 - Keep the writing engaging, concise, and suitable for a public announcement.
-- Do not invent product specifications, statistics, customer quotes, names, dates, or companies.
+- Use the exact product, feature, company, or brand name provided by the user.
+- Never invent, replace, or substitute a product, company, brand, or person name.
+- Do not invent product specifications, statistics, customer quotes, dates, or other specific facts.
+- If the user has not provided a specific detail, write naturally without inventing one.
 - Do not write it as a generic social media post or blog post.
 - Return only the product announcement.
 `;
