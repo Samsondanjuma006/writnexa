@@ -254,6 +254,9 @@ Important writing rules:
 - Make every section directly relevant to the user's topic.
 - Write for the intended audience implied by the idea.
 - Do not invent statistics, facts, quotes, people, companies, or personal experiences.
+- Never present an assumption as a fact. Do not invent or assume product features, capabilities, pricing, availability, URLs, customer claims, integrations, results, dates, specifications, or other specific details unless the user explicitly provided them.
+- When the user's idea does not provide a specific detail, leave it out or describe it generally without claiming it is true.
+- Never invent a website URL, free trial, launch status, feature list, product capability, or call to action that depends on an unsupported fact.
 - Do not include meta commentary.
 - Do not say "Here is your..." or "Here is the..." before the content.
 - Do not mention these instructions.
