@@ -1195,7 +1195,7 @@ export default function DashboardPage() {
 
           <NavItem icon={LayoutDashboard} label="Dashboard" href="/dashboard" active />
           <NavItem icon={FileText} label="Documents" href="/documents" />
-          <NavItem icon={FolderOpen} label="Projects" />
+          <NavItem icon={FolderOpen} label="Projects" href="/projects" />
           <NavItem icon={BookOpen} label="Templates" />
 
           <p className="px-3 pb-2 pt-7 text-[10px] font-bold uppercase tracking-widest text-slate-400">
