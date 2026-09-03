@@ -139,6 +139,60 @@ Requirements:
 `;
           break;
 
+        case "professional email":
+          formatInstruction = `
+Write a complete professional email.
+
+Requirements:
+- Include a clear, concise subject line.
+- Begin with an appropriate professional greeting.
+- State the purpose of the email clearly near the beginning.
+- Organize the message into natural paragraphs.
+- Include specific and useful details based only on the user's idea.
+- Use a professional, respectful, and natural tone.
+- End with an appropriate professional closing.
+- Do not use a blog-style title or section headings.
+- Do not invent names, dates, companies, statistics, or other specific facts.
+- Return only the email.
+`;
+          break;
+
+        case "business proposal":
+          formatInstruction = `
+Create a complete professional business proposal.
+
+Requirements:
+- Start with a clear proposal title.
+- Include a concise executive summary.
+- Clearly explain the problem, opportunity, or need.
+- Present the proposed solution in a structured way.
+- Explain the key benefits and expected value.
+- Include implementation or next-step recommendations where appropriate.
+- Use clear section headings.
+- Keep the proposal persuasive, practical, and business-ready.
+- Do not invent statistics, pricing, clients, companies, or other specific facts.
+- Do not write it as a blog post.
+- Return only the proposal.
+`;
+          break;
+
+        case "product announcement":
+          formatInstruction = `
+Create a polished product announcement.
+
+Requirements:
+- Start with a compelling announcement headline.
+- Clearly explain what the product, feature, or launch is.
+- Highlight the most important benefits and improvements.
+- Explain why the announcement matters to the intended audience.
+- Include a clear call to action.
+- Keep the writing engaging, concise, and suitable for a public announcement.
+- Do not invent product specifications, statistics, customer quotes, names, dates, or companies.
+- Do not write it as a generic social media post or blog post.
+- Return only the product announcement.
+`;
+          break;
+
         case "blog post":
         default:
           formatInstruction = `

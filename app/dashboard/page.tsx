@@ -5,11 +5,14 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  Briefcase,
   FileText,
   FolderOpen,
   HelpCircle,
   LayoutDashboard,
+  Mail,
   Menu,
+  Megaphone,
   PenLine,
   Plus,
   Search,
@@ -39,6 +42,21 @@ const formats = [
     title: "Video script",
     description: "Create clear scripts for YouTube and short videos.",
     icon: WandSparkles,
+  },
+  {
+    title: "Professional email",
+    description: "Write clear, professional emails quickly.",
+    icon: Mail,
+  },
+  {
+    title: "Business proposal",
+    description: "Turn your idea into a convincing business proposal.",
+    icon: Briefcase,
+  },
+  {
+    title: "Product announcement",
+    description: "Announce a product, launch, or new feature.",
+    icon: Megaphone,
   },
   {
     title: "Rewrite",
@@ -1430,14 +1448,14 @@ export default function DashboardPage() {
 
                 <div className="flex flex-wrap items-center justify-end gap-2 text-xs">
                   <span className="text-slate-400">
-                    {content.trim().split(/\\s+/).filter(Boolean).length} words
+                    {content.trim().split(/\s+/).filter(Boolean).length} words
                     <span className="mx-2 text-slate-300">·</span>
                     {content.length} characters
                     <span className="mx-2 text-slate-300">·</span>
                     {Math.max(
                       1,
                       Math.ceil(
-                        content.trim().split(/\\s+/).filter(Boolean).length / 200,
+                        content.trim().split(/\s+/).filter(Boolean).length / 200,
                       ),
                     )} min read
                   </span>
