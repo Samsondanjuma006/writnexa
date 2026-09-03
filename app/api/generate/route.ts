@@ -321,6 +321,24 @@ Important writing rules:
           continue;
         }
 
+        const normalizedContent = content.toLowerCase().trim();
+        const invalidProviderResponses = [
+          "user safety: safe",
+          "user safety",
+        ];
+
+        if (
+          invalidProviderResponses.some(
+            (invalidResponse) => normalizedContent === invalidResponse,
+          )
+        ) {
+          lastError = "The AI returned an invalid provider response.";
+          console.warn(
+            `Model ${model} returned an invalid provider response.`,
+          );
+          continue;
+        }
+
         return NextResponse.json({
           content,
           model: data?.model || model,
