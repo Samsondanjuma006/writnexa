@@ -398,7 +398,7 @@ export default function DashboardPage() {
   function downloadContent() {
     if (!content.trim()) return;
 
-    const blob = new Blob([content], {
+    const blob = new Blob(["\uFEFF", content], {
       type: "text/plain;charset=utf-8",
     });
 
@@ -436,14 +436,30 @@ export default function DashboardPage() {
     if (!content.trim()) return;
 
     try {
-      const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+      const { PDFDocument, rgb } = await import("pdf-lib");
+      const fontkit = (await import("@pdf-lib/fontkit")).default;
 
       const pdfDoc = await PDFDocument.create();
 
-      const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
-      const monoFont = await pdfDoc.embedFont(StandardFonts.Courier);
+      pdfDoc.registerFontkit(fontkit);
+
+      const [regularFontBytes, boldFontBytes, italicFontBytes] =
+        await Promise.all([
+          fetch("/fonts/NotoSans-Regular.ttf").then((response) =>
+            response.arrayBuffer(),
+          ),
+          fetch("/fonts/NotoSans-Bold.ttf").then((response) =>
+            response.arrayBuffer(),
+          ),
+          fetch("/fonts/NotoSans-Italic.ttf").then((response) =>
+            response.arrayBuffer(),
+          ),
+        ]);
+
+      const regularFont = await pdfDoc.embedFont(regularFontBytes);
+      const boldFont = await pdfDoc.embedFont(boldFontBytes);
+      const italicFont = await pdfDoc.embedFont(italicFontBytes);
+      const monoFont = regularFont;
 
       const exportTitle =
         savedDocuments.find(
