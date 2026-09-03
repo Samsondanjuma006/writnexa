@@ -103,7 +103,7 @@ export default function DocumentsPage() {
             </div>
 
             <div>
-              <div className="text-[17px] font-bold">SparkWriter</div>
+              <div className="text-[17px] font-bold">Writnexa</div>
               <div className="text-[11px] text-slate-400">
                 AI writing studio
               </div>
@@ -132,7 +132,7 @@ export default function DocumentsPage() {
             </h1>
 
             <p className="mt-2 text-sm text-slate-500">
-              Everything you have created with SparkWriter.
+              Everything you have created with Writnexa.
             </p>
           </div>
 

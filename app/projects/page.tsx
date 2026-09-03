@@ -131,7 +131,7 @@ export default function ProjectsPage() {
             </div>
 
             <div>
-              <div className="text-[17px] font-bold">SparkWriter</div>
+              <div className="text-[17px] font-bold">Writnexa</div>
               <div className="text-[11px] text-slate-400">
                 AI writing studio
               </div>

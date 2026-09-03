@@ -39,7 +39,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <h1 className="text-3xl font-bold mb-2">Welcome back</h1>
         <p className="text-gray-500 mb-8">
-          Sign in to continue writing with SparkWriter.
+          Sign in to continue writing with Writnexa.
         </p>
 
         <form onSubmit={handleLogin} className="space-y-4">

@@ -161,7 +161,7 @@ Requirements:
     }
 
     const prompt = `
-You are SparkWriter, a professional writing assistant.
+You are Writnexa, a professional writing assistant.
 
 The user's idea is:
 
@@ -211,7 +211,7 @@ Important writing rules:
 
     for (const model of MODELS) {
       try {
-        console.log(`SparkWriter trying model: ${model}`);
+        console.log(`Writnexa trying model: ${model}`);
 
         const response = await fetch(OPENROUTER_URL, {
           method: "POST",
@@ -219,7 +219,7 @@ Important writing rules:
             "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
             "HTTP-Referer": "http://localhost:3000",
-            "X-Title": "SparkWriter",
+            "X-Title": "Writnexa",
           },
           body: JSON.stringify({
             model,
@@ -227,7 +227,7 @@ Important writing rules:
               {
                 role: "system",
                 content:
-                  "You are SparkWriter. Follow the requested format precisely and produce clean, useful writing.",
+                  "You are Writnexa. Follow the requested format precisely and produce clean, useful writing.",
               },
               {
                 role: "user",
@@ -277,7 +277,7 @@ Important writing rules:
       { status: 503 },
     );
   } catch (error) {
-    console.error("SparkWriter generation error:", error);
+    console.error("Writnexa generation error:", error);
 
     return NextResponse.json(
       {

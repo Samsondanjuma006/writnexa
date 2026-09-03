@@ -89,7 +89,7 @@ export default function TemplatesPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-white">
               <Sparkles size={17} />
             </div>
-            <span className="font-bold">SparkWriter</span>
+            <span className="font-bold">Writnexa</span>
           </div>
         </div>
       </header>
@@ -106,7 +106,7 @@ export default function TemplatesPage() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-slate-500 sm:text-base">
-            Choose a template, add your idea, and let SparkWriter create the
+            Choose a template, add your idea, and let Writnexa create the
             first draft for you.
           </p>
         </div>

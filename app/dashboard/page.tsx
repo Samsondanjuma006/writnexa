@@ -280,7 +280,7 @@ export default function DashboardPage() {
         const demoContent = createDemoContent(idea, format);
         updateContentWithHistory(demoContent);
         saveDocument(demoContent, format, null);
-        setError("AI credits are unavailable, so SparkWriter is using Demo Mode.");
+        setError("AI credits are unavailable, so Writnexa is using Demo Mode.");
         return;
       }
 
@@ -434,7 +434,7 @@ export default function DashboardPage() {
           .split("\n")
           .map((line) => line.replace(/^#+\s*/, "").trim())
           .find((line) => line.length > 0) ||
-        "SparkWriter Document";
+        "Writnexa Document";
 
       const exportDate = new Date().toLocaleDateString(undefined, {
         year: "numeric",
@@ -640,7 +640,7 @@ export default function DashboardPage() {
 
       pages.forEach((currentPage, index) => {
         currentPage.drawText(
-          `Created with SparkWriter • Page ${index + 1} of ${pages.length}`,
+          `Created with Writnexa • Page ${index + 1} of ${pages.length}`,
           {
             x: margin,
             y: 24,
@@ -812,7 +812,7 @@ export default function DashboardPage() {
           .split("\n")
           .map((line) => line.replace(/^#+\s*/, "").trim())
           .find((line) => line.length > 0) ||
-        "SparkWriter Document";
+        "Writnexa Document";
 
       const exportDate = new Date().toLocaleDateString(undefined, {
         year: "numeric",
@@ -846,7 +846,7 @@ export default function DashboardPage() {
                     alignment: AlignmentType.CENTER,
                     children: [
                       new TextRun({
-                        text: "Created with SparkWriter • Page ",
+                        text: "Created with Writnexa • Page ",
                         size: 18,
                       }),
                       new TextRun({
@@ -1150,7 +1150,7 @@ export default function DashboardPage() {
             </div>
 
             <div>
-              <div className="text-[17px] font-bold">SparkWriter</div>
+              <div className="text-[17px] font-bold">Writnexa</div>
               <div className="text-[11px] text-slate-400">
                 AI writing studio
               </div>
@@ -1275,7 +1275,7 @@ export default function DashboardPage() {
               </h1>
 
               <p className="mt-3 text-sm leading-6 text-slate-400 sm:text-base">
-                Start with an idea and let SparkWriter help you create
+                Start with an idea and let Writnexa help you create
                 content worth publishing.
               </p>
             </div>
@@ -1345,7 +1345,7 @@ export default function DashboardPage() {
               {loading && (
                 <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-300">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-                  SparkWriter is writing your draft...
+                  Writnexa is writing your draft...
                 </div>
               )}
 
@@ -1540,7 +1540,7 @@ export default function DashboardPage() {
             <div className="mb-4">
               <h2 className="text-lg font-bold">Start with a format</h2>
               <p className="mt-1 text-xs text-slate-400">
-                Choose what you want SparkWriter to create.
+                Choose what you want Writnexa to create.
               </p>
             </div>
 
@@ -1718,7 +1718,7 @@ export default function DashboardPage() {
           </section>
 
           <footer className="py-10 text-center text-xs text-slate-400">
-            SparkWriter · Your AI writing studio
+            Writnexa · Your AI writing studio
           </footer>
         </div>
       </section>
