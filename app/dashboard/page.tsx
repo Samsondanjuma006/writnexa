@@ -184,30 +184,49 @@ export default function DashboardPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requestedDocumentId = params.get("document");
+    const requestedTemplate = params.get("template");
+    const requestedFormat = params.get("format");
+    const requestedPrompt = params.get("prompt");
 
-    if (!requestedDocumentId) return;
+    if (requestedDocumentId) {
+      const requestedDocument = savedDocuments.find(
+        (document) => document.id === requestedDocumentId,
+      );
 
-    const requestedDocument = savedDocuments.find(
-      (document) => document.id === requestedDocumentId,
-    );
+      if (!requestedDocument) return;
 
-    if (!requestedDocument) return;
+      setActiveDocumentId(requestedDocument.id);
+      setIdea(requestedDocument.idea || requestedDocument.title);
+      setFormat(requestedDocument.type || "Blog post");
+      setTone(requestedDocument.tone || "Professional");
+      setContent(requestedDocument.content || "");
+      setContentHistory(
+        requestedDocument.content ? [requestedDocument.content] : [],
+      );
+      setHistoryIndex(requestedDocument.content ? 0 : -1);
+      setEditing(false);
+      setError("");
+      setCopied(false);
+      setSaveStatus("saved");
 
-    setActiveDocumentId(requestedDocument.id);
-    setIdea(requestedDocument.idea || requestedDocument.title);
-    setFormat(requestedDocument.type || "Blog post");
-    setTone(requestedDocument.tone || "Professional");
-    setContent(requestedDocument.content || "");
-    setContentHistory(
-      requestedDocument.content ? [requestedDocument.content] : [],
-    );
-    setHistoryIndex(requestedDocument.content ? 0 : -1);
-    setEditing(false);
-    setError("");
-    setCopied(false);
-    setSaveStatus("saved");
+      window.history.replaceState({}, "", "/dashboard");
+      return;
+    }
 
-    window.history.replaceState({}, "", "/dashboard");
+    if (requestedTemplate) {
+      setActiveDocumentId(null);
+      setIdea(requestedPrompt || "");
+      setFormat(requestedFormat || "Blog post");
+      setContent("");
+      setContentHistory([]);
+      setHistoryIndex(-1);
+      setEditing(false);
+      setError("");
+      setCopied(false);
+      setSaveStatus("saved");
+
+      window.history.replaceState({}, "", "/dashboard");
+    }
   }, [savedDocuments]);
 
   useEffect(() => {
