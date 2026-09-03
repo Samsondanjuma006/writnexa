@@ -288,7 +288,7 @@ Important writing rules:
                 content: prompt,
               },
             ],
-            max_tokens: 1200,
+            max_tokens: 2500,
             temperature: 0.7,
           }),
         });
@@ -301,8 +301,14 @@ Important writing rules:
           continue;
         }
 
-        const content =
-          data?.choices?.[0]?.message?.content?.trim() || "";
+        const choice = data?.choices?.[0];
+        const content = choice?.message?.content?.trim() || "";
+        const finishReason = choice?.finish_reason;
+
+        if (finishReason === "length") {
+          lastError = "The AI response was incomplete. Please try again.";
+          continue;
+        }
 
         if (!content) {
           lastError = "The AI returned empty content.";
