@@ -182,6 +182,35 @@ export default function DashboardPage() {
   }, [savedDocuments]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedDocumentId = params.get("document");
+
+    if (!requestedDocumentId) return;
+
+    const requestedDocument = savedDocuments.find(
+      (document) => document.id === requestedDocumentId,
+    );
+
+    if (!requestedDocument) return;
+
+    setActiveDocumentId(requestedDocument.id);
+    setIdea(requestedDocument.idea || requestedDocument.title);
+    setFormat(requestedDocument.type || "Blog post");
+    setTone(requestedDocument.tone || "Professional");
+    setContent(requestedDocument.content || "");
+    setContentHistory(
+      requestedDocument.content ? [requestedDocument.content] : [],
+    );
+    setHistoryIndex(requestedDocument.content ? 0 : -1);
+    setEditing(false);
+    setError("");
+    setCopied(false);
+    setSaveStatus("saved");
+
+    window.history.replaceState({}, "", "/dashboard");
+  }, [savedDocuments]);
+
+  useEffect(() => {
     if (!editing || !content.trim()) return;
 
     setSaveStatus("saving");
