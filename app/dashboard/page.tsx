@@ -1094,6 +1094,8 @@ export default function DashboardPage() {
 
     setActiveDocumentId(id);
 
+    let saveUserRole = "unknown";
+
     try {
       const {
         data: { user },
@@ -1107,6 +1109,8 @@ export default function DashboardPage() {
       if (!user) {
         throw new Error("You must be signed in to save documents.");
       }
+
+      saveUserRole = user.role || "unknown";
 
       const { error: saveError } = await supabase
         .from("documents")
@@ -1150,12 +1154,14 @@ export default function DashboardPage() {
         code: supabaseError?.code,
         details: supabaseError?.details,
         hint: supabaseError?.hint,
+        userRole: saveUserRole,
       });
 
       setError(
         `Supabase save failed: ${message}` +
           (supabaseError?.code ? ` (code: ${supabaseError.code})` : "") +
-          (supabaseError?.details ? ` — ${supabaseError.details}` : ""),
+          (supabaseError?.details ? ` — ${supabaseError.details}` : "") +
+          (saveUserRole !== "unknown" ? ` — role: ${saveUserRole}` : ""),
       );
     }
 
