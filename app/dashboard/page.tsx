@@ -152,7 +152,7 @@ export default function DashboardPage() {
         console.error("Unable to load documents from Supabase:", error);
 
         try {
-          const stored = localStorage.getItem("sparkwriter-documents");
+          const stored = localStorage.getItem("writnexa-documents");
 
           if (stored) {
             const parsed = JSON.parse(stored);
@@ -173,7 +173,7 @@ export default function DashboardPage() {
   useEffect(() => {
     try {
       localStorage.setItem(
-        "sparkwriter-documents",
+        "writnexa-documents",
         JSON.stringify(savedDocuments),
       );
     } catch {
@@ -299,7 +299,7 @@ export default function DashboardPage() {
         const demoContent = createDemoContent(idea, format);
         updateContentWithHistory(demoContent);
         saveDocument(demoContent, format, null);
-        setError("AI credits are unavailable, so SparkWriter is using Demo Mode.");
+        setError("AI credits are unavailable, so Writnexa is using Demo Mode.");
         return;
       }
 
@@ -392,7 +392,7 @@ export default function DashboardPage() {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
-      .slice(0, 60) || "sparkwriter-document";
+      .slice(0, 60) || "writnexa-document";
   }
 
   function downloadContent() {
@@ -406,7 +406,7 @@ export default function DashboardPage() {
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `${getExportBaseName()}-sparkwriter.txt`;
+    link.download = `${getExportBaseName()}-writnexa.txt`;
 
     document.body.appendChild(link);
     link.click();
@@ -424,7 +424,7 @@ export default function DashboardPage() {
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `${getExportBaseName()}-sparkwriter.md`;
+    link.download = `${getExportBaseName()}-writnexa.md`;
 
     document.body.appendChild(link);
     link.click();
@@ -453,7 +453,7 @@ export default function DashboardPage() {
           .split("\n")
           .map((line) => line.replace(/^#+\s*/, "").trim())
           .find((line) => line.length > 0) ||
-        "SparkWriter Document";
+        "Writnexa Document";
 
       const exportDate = new Date().toLocaleDateString(undefined, {
         year: "numeric",
@@ -659,7 +659,7 @@ export default function DashboardPage() {
 
       pages.forEach((currentPage, index) => {
         currentPage.drawText(
-          `Created with SparkWriter • Page ${index + 1} of ${pages.length}`,
+          `Created with Writnexa • Page ${index + 1} of ${pages.length}`,
           {
             x: margin,
             y: 24,
@@ -683,7 +683,7 @@ export default function DashboardPage() {
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = `${getExportBaseName()}-sparkwriter.pdf`;
+      link.download = `${getExportBaseName()}-writnexa.pdf`;
 
       document.body.appendChild(link);
       link.click();
@@ -807,7 +807,7 @@ export default function DashboardPage() {
         if (numberedMatch) {
           return new Paragraph({
             numbering: {
-              reference: "sparkwriter-numbered",
+              reference: "writnexa-numbered",
               level: 0,
             },
             children: parseInlineMarkdown(numberedMatch[2]).map(
@@ -831,7 +831,7 @@ export default function DashboardPage() {
           .split("\n")
           .map((line) => line.replace(/^#+\s*/, "").trim())
           .find((line) => line.length > 0) ||
-        "SparkWriter Document";
+        "Writnexa Document";
 
       const exportDate = new Date().toLocaleDateString(undefined, {
         year: "numeric",
@@ -843,7 +843,7 @@ export default function DashboardPage() {
         numbering: {
           config: [
             {
-              reference: "sparkwriter-numbered",
+              reference: "writnexa-numbered",
               levels: [
                 {
                   level: 0,
@@ -865,7 +865,7 @@ export default function DashboardPage() {
                     alignment: AlignmentType.CENTER,
                     children: [
                       new TextRun({
-                        text: "Created with SparkWriter • Page ",
+                        text: "Created with Writnexa • Page ",
                         size: 18,
                       }),
                       new TextRun({
@@ -904,7 +904,7 @@ export default function DashboardPage() {
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = `${getExportBaseName()}-sparkwriter.docx`;
+      link.download = `${getExportBaseName()}-writnexa.docx`;
 
       document.body.appendChild(link);
       link.click();
@@ -1169,7 +1169,7 @@ export default function DashboardPage() {
             </div>
 
             <div>
-              <div className="text-[17px] font-bold">SparkWriter</div>
+              <div className="text-[17px] font-bold">Writnexa</div>
               <div className="text-[11px] text-slate-400">
                 AI writing studio
               </div>
@@ -1294,7 +1294,7 @@ export default function DashboardPage() {
               </h1>
 
               <p className="mt-3 text-sm leading-6 text-slate-400 sm:text-base">
-                Start with an idea and let SparkWriter help you create
+                Start with an idea and let Writnexa help you create
                 content worth publishing.
               </p>
             </div>
@@ -1364,7 +1364,7 @@ export default function DashboardPage() {
               {loading && (
                 <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-300">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-                  SparkWriter is writing your draft...
+                  Writnexa is writing your draft...
                 </div>
               )}
 
@@ -1559,7 +1559,7 @@ export default function DashboardPage() {
             <div className="mb-4">
               <h2 className="text-lg font-bold">Start with a format</h2>
               <p className="mt-1 text-xs text-slate-400">
-                Choose what you want SparkWriter to create.
+                Choose what you want Writnexa to create.
               </p>
             </div>
 
@@ -1737,7 +1737,7 @@ export default function DashboardPage() {
           </section>
 
           <footer className="py-10 text-center text-xs text-slate-400">
-            SparkWriter · Your AI writing studio
+            Writnexa · Your AI writing studio
           </footer>
         </div>
       </section>

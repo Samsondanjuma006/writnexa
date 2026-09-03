@@ -54,7 +54,7 @@ export default function Home() {
               <Sparkles size={18} strokeWidth={2.2} />
             </span>
             <span className="text-xl font-bold tracking-[-0.04em]">
-              SparkWriter
+              Writnexa
             </span>
           </a>
 
@@ -139,7 +139,7 @@ export default function Home() {
             </h1>
 
             <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-zinc-600 sm:text-lg">
-              SparkWriter turns rough ideas into polished blogs, social posts,
+              Writnexa turns rough ideas into polished blogs, social posts,
               video scripts and more — while helping you keep your own voice.
             </p>
 
@@ -183,7 +183,7 @@ export default function Home() {
 
                 <div className="mx-auto hidden items-center gap-2 rounded-lg bg-zinc-50 px-3 py-1.5 text-xs text-zinc-500 sm:flex">
                   <Sparkles size={12} />
-                  SparkWriter
+                  Writnexa
                 </div>
               </div>
 
@@ -193,7 +193,7 @@ export default function Home() {
                     <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#18181b] text-white">
                       <Sparkles size={13} />
                     </span>
-                    SparkWriter
+                    Writnexa
                   </div>
 
                   <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
@@ -276,7 +276,7 @@ export default function Home() {
               One workspace for all your content.
             </h2>
             <p className="mt-5 text-base leading-7 text-zinc-600">
-              From the first idea to the final draft, SparkWriter gives creators
+              From the first idea to the final draft, Writnexa gives creators
               the tools to move faster without sacrificing quality.
             </p>
           </div>
@@ -329,7 +329,7 @@ export default function Home() {
               </h2>
 
               <p className="mt-5 max-w-lg text-base leading-7 text-zinc-600">
-                You bring the idea. SparkWriter helps shape it into something
+                You bring the idea. Writnexa helps shape it into something
                 worth publishing.
               </p>
 
@@ -355,7 +355,7 @@ export default function Home() {
               <div className="rounded-2xl bg-[#18181b] p-6 text-white sm:p-8">
                 <div className="flex items-center gap-2 text-xs text-zinc-400">
                   <Sparkles size={13} />
-                  SPARKWRITER AI
+                  WITNEXA AI
                 </div>
 
                 <h3 className="mt-7 text-2xl font-bold tracking-tight">
@@ -395,7 +395,7 @@ export default function Home() {
                   Spend less time staring at the cursor.
                 </h2>
                 <p className="mt-5 text-base leading-7 text-zinc-600">
-                  SparkWriter handles the heavy lifting so you can spend more
+                  Writnexa handles the heavy lifting so you can spend more
                   time creating, publishing and growing.
                 </p>
               </div>
@@ -442,10 +442,10 @@ export default function Home() {
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10">
               <Sparkles size={13} />
             </span>
-            <span className="font-semibold">SparkWriter</span>
+            <span className="font-semibold">Writnexa</span>
           </div>
 
-          <div>© {new Date().getFullYear()} SparkWriter. Built for creators.</div>
+          <div>© {new Date().getFullYear()} Writnexa. Built for creators.</div>
 
           <div className="flex gap-5">
             <a href="#" className="transition hover:text-white">

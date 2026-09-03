@@ -48,7 +48,7 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         <h1 className="text-3xl font-bold mb-2">Create your account</h1>
         <p className="text-gray-500 mb-8">
-          Start writing with SparkWriter.
+          Start writing with Writnexa.
         </p>
 
         <form onSubmit={handleSignup} className="space-y-4">
