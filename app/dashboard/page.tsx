@@ -1136,7 +1136,27 @@ export default function DashboardPage() {
             ? String((error as { message?: unknown }).message)
             : "Unknown Supabase save error.";
 
-      setError(`Supabase save failed: ${message}`);
+      const supabaseError =
+        typeof error === "object" && error !== null
+          ? error as {
+              code?: string;
+              details?: string;
+              hint?: string;
+            }
+          : null;
+
+      console.error("Supabase save diagnostics:", {
+        message,
+        code: supabaseError?.code,
+        details: supabaseError?.details,
+        hint: supabaseError?.hint,
+      });
+
+      setError(
+        `Supabase save failed: ${message}` +
+          (supabaseError?.code ? ` (code: ${supabaseError.code})` : "") +
+          (supabaseError?.details ? ` — ${supabaseError.details}` : ""),
+      );
     }
 
     return id;
