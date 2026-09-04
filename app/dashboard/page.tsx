@@ -201,6 +201,36 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const hasDocument = params.has("document");
+    const hasTemplate = params.has("template");
+
+    if (hasDocument || hasTemplate) {
+      return;
+    }
+
+    const savedFormat = window.localStorage.getItem(
+      "writnexa-default-format",
+    );
+    const savedTone = window.localStorage.getItem(
+      "writnexa-default-tone",
+    );
+
+    if (savedFormat && formats.some((item) => item.title === savedFormat)) {
+      setFormat(savedFormat);
+    }
+
+    if (
+      savedTone &&
+      ["Professional", "Friendly", "Persuasive", "Casual", "Creative"].includes(
+        savedTone,
+      )
+    ) {
+      setTone(savedTone);
+    }
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
     const requestedDocumentId = params.get("document");
     const requestedTemplate = params.get("template");
     const requestedFormat = params.get("format");
@@ -1249,7 +1279,29 @@ export default function DashboardPage() {
             onClick={() => {
               setActiveDocumentId(null);
               setIdea("");
-              setFormat("Blog post");
+
+              const savedFormat = window.localStorage.getItem(
+                "writnexa-default-format",
+              );
+              const savedTone = window.localStorage.getItem(
+                "writnexa-default-tone",
+              );
+
+              setFormat(
+                savedFormat && formats.some((item) => item.title === savedFormat)
+                  ? savedFormat
+                  : "Blog post",
+              );
+
+              setTone(
+                savedTone &&
+                  ["Professional", "Friendly", "Persuasive", "Casual", "Creative"].includes(
+                    savedTone,
+                  )
+                  ? savedTone
+                  : "Professional",
+              );
+
               setContent("");
               setContentHistory([]);
               setHistoryIndex(-1);
