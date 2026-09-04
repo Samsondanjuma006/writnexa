@@ -20,6 +20,7 @@ const templates = [
     icon: FileText,
     format: "Blog post",
     prompt: "Write a detailed blog post about",
+    placeholder: "e.g. How AI is changing education in Nigeria",
   },
   {
     title: "Social media post",
@@ -27,6 +28,7 @@ const templates = [
     icon: PenLine,
     format: "Social post",
     prompt: "Create an engaging social media post about",
+    placeholder: "e.g. A new productivity tip for busy professionals",
   },
   {
     title: "YouTube video script",
@@ -34,6 +36,7 @@ const templates = [
     icon: Video,
     format: "Video script",
     prompt: "Write an engaging YouTube video script about",
+    placeholder: "e.g. 5 ways to save money every month",
   },
   {
     title: "Professional email",
@@ -41,6 +44,7 @@ const templates = [
     icon: Mail,
     format: "Professional email",
     prompt: "Write a professional email about",
+    placeholder: "e.g. Requesting a meeting with a client",
   },
   {
     title: "Business proposal",
@@ -48,6 +52,7 @@ const templates = [
     icon: Briefcase,
     format: "Business proposal",
     prompt: "Write a professional business proposal about",
+    placeholder: "e.g. A digital marketing service for small businesses",
   },
   {
     title: "Product announcement",
@@ -55,19 +60,30 @@ const templates = [
     icon: Megaphone,
     format: "Product announcement",
     prompt: "Write a compelling product announcement about",
+    placeholder: "e.g. Launching our new mobile app",
   },
 ];
 
 export default function TemplatesPage() {
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<
+    (typeof templates)[number] | null
+  >(null);
+  const [idea, setIdea] = useState("");
 
-  function useTemplate(template: (typeof templates)[number]) {
-    setSelectedTemplate(template.title);
+  function openTemplate(template: (typeof templates)[number]) {
+    setSelectedTemplate(template);
+    setIdea("");
+  }
+
+  function useTemplate() {
+    if (!selectedTemplate || !idea.trim()) {
+      return;
+    }
 
     const params = new URLSearchParams({
-      template: template.title,
-      format: template.format,
-      prompt: template.prompt,
+      template: selectedTemplate.title,
+      format: selectedTemplate.format,
+      prompt: idea.trim(),
     });
 
     window.location.href = `/dashboard?${params.toString()}`;
@@ -114,12 +130,11 @@ export default function TemplatesPage() {
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => {
             const Icon = template.icon;
-            const selected = selectedTemplate === template.title;
 
             return (
               <button
                 key={template.title}
-                onClick={() => useTemplate(template)}
+                onClick={() => openTemplate(template)}
                 className="group rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
               >
                 <div className="flex items-start justify-between">
@@ -140,13 +155,75 @@ export default function TemplatesPage() {
                 </p>
 
                 <span className="mt-5 inline-block text-xs font-semibold text-slate-950">
-                  {selected ? "Opening..." : "Use template →"}
+                  Use template →
                 </span>
               </button>
             );
           })}
         </div>
       </section>
+
+      {selectedTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  {selectedTemplate.title}
+                </div>
+                <h2 className="mt-1 text-xl font-bold">
+                  What do you want to write about?
+                </h2>
+              </div>
+
+              <button
+                onClick={() => setSelectedTemplate(null)}
+                className="rounded-lg px-2 py-1 text-sm text-slate-400 transition hover:bg-slate-100 hover:text-slate-950"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {selectedTemplate.description}
+            </p>
+
+            <textarea
+              autoFocus
+              value={idea}
+              onChange={(event) => setIdea(event.target.value)}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" &&
+                  (event.ctrlKey || event.metaKey)
+                ) {
+                  useTemplate();
+                }
+              }}
+              placeholder={selectedTemplate.placeholder}
+              rows={5}
+              className="mt-5 w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+            />
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={() => setSelectedTemplate(null)}
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={useTemplate}
+                disabled={!idea.trim()}
+                className="rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Use template →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
