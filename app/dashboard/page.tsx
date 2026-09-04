@@ -381,7 +381,7 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({
           idea: content,
-          type: `${action} ${format}`,
+          type: action === "Rewrite" ? "Rewrite" : `${action} ${format}`,
         }),
       });
 
@@ -1892,6 +1892,14 @@ Start with your own idea, use technology to speed up the repetitive work, then r
 ENDING
 
 The future belongs to people who know how to combine their creativity with powerful tools. What will you create next?`;
+  }
+
+  if (format === "Rewrite") {
+    return `Rewritten version:
+
+${title}
+
+The content has been restructured for clearer flow, stronger wording, and easier reading while keeping the original message intact.`;
   }
 
   return `# ${title}

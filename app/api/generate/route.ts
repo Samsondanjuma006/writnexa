@@ -90,7 +90,7 @@ Requirements:
 - Make the expanded version substantially more useful than the original.
 - Return only the expanded content.
 `;
-    } else if (normalizedType.startsWith("rewrite ")) {
+    } else if (normalizedType === "rewrite" || normalizedType.startsWith("rewrite ")) {
       formatInstruction = `
 Rewrite the existing content provided by the user.
 
