@@ -62,6 +62,14 @@ const templates = [
     prompt: "Write a compelling product announcement about",
     placeholder: "e.g. Launching our new mobile app",
   },
+  {
+    title: "Rewrite",
+    description: "Improve clarity, structure, tone, and impact.",
+    icon: PenLine,
+    format: "Rewrite",
+    prompt: "Rewrite and improve the following text",
+    placeholder: "Paste the text you want Writnexa to improve",
+  },
 ];
 
 export default function TemplatesPage() {
