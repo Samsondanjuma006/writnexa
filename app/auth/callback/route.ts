@@ -9,7 +9,10 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/login?error=missing_code", url.origin));
   }
 
-  let response = NextResponse.redirect(new URL("/dashboard", url.origin));
+  const next = url.searchParams.get("next");
+  const safeNext = next === "/reset-password" ? next : "/dashboard";
+
+  let response = NextResponse.redirect(new URL(safeNext, url.origin));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

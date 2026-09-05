@@ -61,6 +61,15 @@ export default function LoginPage() {
             className="w-full rounded-lg border p-3"
           />
 
+          <div className="flex justify-end -mt-2">
+            <Link
+              href="/forgot-password"
+              className="text-sm font-medium underline"
+            >
+              Forgot your password?
+            </Link>
+          </div>
+
           {error && (
             <p className="text-sm text-red-600">
               {error}
