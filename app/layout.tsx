@@ -28,6 +28,14 @@ export const metadata: Metadata = {
   description:
     "Writnexa helps you turn ideas into polished blogs, social posts, scripts, emails, proposals, and more with AI.",
   applicationName: "Writnexa",
+  appleWebApp: {
+    capable: true,
+    title: "Writnexa",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   keywords: [
     "AI writing",
     "AI writing assistant",
