@@ -115,6 +115,7 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [savedDocuments, setSavedDocuments] = useState(documents);
+  const [documentCount, setDocumentCount] = useState(0);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
   const [renamingDocumentId, setRenamingDocumentId] = useState<string | null>(null);
@@ -142,6 +143,10 @@ export default function DashboardPage() {
           return;
         }
 
+        const { count: totalDocuments, error: countError } = await supabase.from("documents").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+        if (!countError) {
+          setDocumentCount(totalDocuments ?? 0);
+        }
         const { data, error } = await supabase
           .from("documents")
           .select("id, title, type, tone, idea, content, created_at, updated_at")
@@ -1341,11 +1346,11 @@ export default function DashboardPage() {
         <div className="m-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold">Free plan</span>
-            <span className="text-[11px] text-slate-400">12 / 50</span>
+            <span className="text-[11px] text-slate-400">{documentCount} / 50</span>
           </div>
 
           <div className="mt-3 h-1.5 rounded-full bg-slate-200">
-            <div className="h-full w-1/4 rounded-full bg-slate-900" />
+            <div className="h-full rounded-full bg-slate-900" style={{ width: `${Math.min((documentCount / 50) * 100, 100)}%` }} />
           </div>
 
           <button className="mt-3 text-xs font-semibold">
