@@ -1340,7 +1340,7 @@ export default function DashboardPage() {
 
           <NavItem icon={BarChart3} label="Usage" />
           <NavItem icon={Settings} label="Settings" href="/settings" />
-          <NavItem icon={HelpCircle} label="Help center" />
+          <NavItem icon={HelpCircle} label="Help center" href="/help" />
         </nav>
 
         <div className="m-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
