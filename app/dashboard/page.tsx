@@ -120,6 +120,8 @@ export default function DashboardPage() {
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
   const [renamingDocumentId, setRenamingDocumentId] = useState<string | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
+  const [billingOpen, setBillingOpen] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "annually">("monthly");
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -1242,6 +1244,37 @@ export default function DashboardPage() {
     setError("");
   }
 
+  async function startPaystackCheckout(plan: "starter" | "pro") {
+    try {
+      setError("");
+
+      const response = await fetch("/api/paystack/initialize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          plan,
+          interval: billingInterval,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.authorization_url) {
+        throw new Error(data.error || "Unable to start payment.");
+      }
+
+      window.location.href = data.authorization_url;
+    } catch (checkoutError) {
+      setError(
+        checkoutError instanceof Error
+          ? checkoutError.message
+          : "Unable to start payment.",
+      );
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-slate-950">
       {menuOpen && (
@@ -1353,7 +1386,10 @@ export default function DashboardPage() {
             <div className="h-full rounded-full bg-slate-900" style={{ width: `${Math.min((documentCount / 50) * 100, 100)}%` }} />
           </div>
 
-          <button className="mt-3 text-xs font-semibold">
+          <button
+            onClick={() => setBillingOpen(true)}
+            className="mt-3 text-xs font-semibold"
+          >
             Upgrade plan →
           </button>
         </div>
@@ -1858,6 +1894,87 @@ export default function DashboardPage() {
           </footer>
         </div>
       </section>
+
+      {billingOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <div className="w-full max-w-3xl rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  Writnexa plans
+                </p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-950">
+                  Upgrade your writing workspace
+                </h2>
+                <p className="mt-2 text-sm text-slate-500">
+                  Choose a plan and billing cycle that works for you.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setBillingOpen(false)}
+                className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Close pricing"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mt-6 flex justify-center">
+              <div className="inline-flex rounded-xl bg-slate-100 p-1">
+                <button
+                  type="button"
+                  onClick={() => setBillingInterval("monthly")}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                    billingInterval === "monthly"
+                      ? "bg-white text-slate-950 shadow-sm"
+                      : "text-slate-500"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingInterval("annually")}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                    billingInterval === "annually"
+                      ? "bg-white text-slate-950 shadow-sm"
+                      : "text-slate-500"
+                  }`}
+                >
+                  Annual
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <BillingPlanCard
+                name="Starter"
+                price={billingInterval === "monthly" ? "₦2,500" : "₦25,000"}
+                period={billingInterval === "monthly" ? "/month" : "/year"}
+                documents="200 documents/month"
+                trial="7-day trial"
+                onSelect={() => startPaystackCheckout("starter")}
+              />
+
+              <BillingPlanCard
+                name="Pro"
+                price={billingInterval === "monthly" ? "₦5,000" : "₦50,000"}
+                period={billingInterval === "monthly" ? "/month" : "/year"}
+                documents="500 documents/month"
+                trial="7-day trial"
+                featured
+                onSelect={() => startPaystackCheckout("pro")}
+              />
+            </div>
+
+            <p className="mt-5 text-center text-xs text-slate-400">
+              Payments are securely processed by Paystack.
+            </p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -1933,6 +2050,74 @@ Technology can provide powerful assistance, but human judgment remains essential
 
 ${title} will continue to evolve as technology and society change. The people who learn how to use new tools thoughtfully will be better positioned to take advantage of future opportunities while maintaining their own creativity and voice.`;
 }
+function BillingPlanCard({
+  name,
+  price,
+  period,
+  documents,
+  trial,
+  featured = false,
+  onSelect,
+}: {
+  name: string;
+  price: string;
+  period: string;
+  documents: string;
+  trial: string;
+  featured?: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-5 ${
+        featured
+          ? "border-slate-900 bg-slate-950 text-white"
+          : "border-slate-200 bg-white"
+      }`}
+    >
+      {featured && (
+        <span className="inline-flex rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
+          Most popular
+        </span>
+      )}
+
+      <h3 className="mt-3 text-lg font-bold">{name}</h3>
+
+      <div className="mt-3 flex items-baseline gap-1">
+        <span className="text-3xl font-bold">{price}</span>
+        <span
+          className={`text-sm ${
+            featured ? "text-white/60" : "text-slate-400"
+          }`}
+        >
+          {period}
+        </span>
+      </div>
+
+      <div
+        className={`mt-4 space-y-2 text-sm ${
+          featured ? "text-white/75" : "text-slate-500"
+        }`}
+      >
+        <p>✓ {documents}</p>
+        <p>✓ {trial}</p>
+      </div>
+
+      <button
+        type="button"
+        onClick={onSelect}
+        className={`mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold transition ${
+          featured
+            ? "bg-white text-slate-950 hover:bg-slate-100"
+            : "bg-slate-950 text-white hover:bg-slate-800"
+        }`}
+      >
+        Choose {name}
+      </button>
+    </div>
+  );
+}
+
 function NavItem({
   icon: Icon,
   label,
