@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   try {
@@ -17,7 +18,9 @@ export async function GET(request: Request) {
       );
     }
 
-    const reference = new URL(request.url).searchParams.get("reference");
+    const searchParams = new URL(request.url).searchParams;
+    const reference =
+      searchParams.get("reference") || searchParams.get("trxref");
 
     if (!reference) {
       return NextResponse.json(
@@ -64,8 +67,55 @@ export async function GET(request: Request) {
       );
     }
 
+    if (!["starter", "pro"].includes(metadata?.plan)) {
+      return NextResponse.json(
+        { error: "Invalid billing plan in payment metadata." },
+        { status: 400 },
+      );
+    }
+
+    if (!["monthly", "annually"].includes(metadata?.interval)) {
+      return NextResponse.json(
+        { error: "Invalid billing interval in payment metadata." },
+        { status: 400 },
+      );
+    }
+
+    const admin = createAdminClient();
+
+    const { error: subscriptionError } = await admin
+      .from("billing_subscriptions")
+      .upsert(
+        {
+          user_id: user.id,
+          plan_code: metadata.plan,
+          status: "active",
+          billing_interval: metadata.interval,
+          paystack_customer_code: data.data?.customer?.customer_code || null,
+          paystack_subscription_code:
+            data.data?.subscription?.subscription_code || null,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id",
+        },
+      );
+
+    if (subscriptionError) {
+      console.error(
+        "Billing subscription upsert error:",
+        subscriptionError,
+      );
+
+      return NextResponse.json(
+        { error: "Payment verified, but subscription could not be saved." },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json({
       verified: true,
+      saved: true,
       reference: data.data.reference,
       status: data.data.status,
       amount: data.data.amount,
