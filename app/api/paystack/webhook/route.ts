@@ -47,21 +47,20 @@ export async function POST(request: Request) {
 
     if (event.event === "subscription.create") {
       const subscription = event.data;
-      const userId = subscription?.metadata?.user_id;
+      const customerCode = subscription?.customer?.customer_code;
 
-      if (userId && subscription?.subscription_code) {
+      if (customerCode && subscription?.subscription_code) {
         const admin = createAdminClient();
 
         const { error } = await admin
           .from("billing_subscriptions")
           .update({
-            paystack_customer_code:
-              subscription.customer?.customer_code || null,
+            paystack_customer_code: customerCode,
             paystack_subscription_code:
               subscription.subscription_code,
             updated_at: new Date().toISOString(),
           })
-          .eq("user_id", userId);
+          .eq("paystack_customer_code", customerCode);
 
         if (error) {
           console.error("Subscription webhook update error:", error);
