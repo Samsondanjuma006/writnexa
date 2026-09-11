@@ -379,12 +379,18 @@ export default function DashboardPage() {
           idea,
           type: format,
           tone,
+          documentId: activeDocumentId,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.code === "DOCUMENT_LIMIT_REACHED") {
+          setError(data.error || "You have reached your monthly document limit.");
+          return;
+        }
+
         const demoContent = createDemoContent(idea, format);
         updateContentWithHistory(demoContent);
         saveDocument(demoContent, format, null);
@@ -423,6 +429,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           idea: content,
           type: action === "Rewrite" ? "Rewrite" : `${action} ${format}`,
+          documentId: activeDocumentId,
         }),
       });
 

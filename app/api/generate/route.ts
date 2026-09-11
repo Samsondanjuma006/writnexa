@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MODELS = [
@@ -7,15 +9,124 @@ const MODELS = [
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "You must be signed in to generate content." },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
 
     const idea =
       typeof body.idea === "string" ? body.idea.trim() : "";
 
+    const documentId =
+      typeof body.documentId === "string" ? body.documentId : null;
+
     const type =
       typeof body.type === "string" && body.type.trim()
         ? body.type.trim()
         : "Blog post";
+
+    const admin = createAdminClient();
+
+    const { data: subscription, error: subscriptionError } = await admin
+      .from("billing_subscriptions")
+      .select("plan_code")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (subscriptionError) {
+      console.error("Billing subscription lookup error:", subscriptionError);
+
+      return NextResponse.json(
+        { error: "Unable to check your plan usage." },
+        { status: 500 },
+      );
+    }
+
+    const plan = subscription?.plan_code || "free";
+
+    const documentLimits = {
+      free: 50,
+      starter: 200,
+      pro: 500,
+    } as const;
+
+    const documentLimit =
+      documentLimits[plan as keyof typeof documentLimits] ??
+      documentLimits.free;
+
+    let isExistingDocument = false;
+
+    if (documentId) {
+      const { data: existingDocument, error: existingDocumentError } =
+        await admin
+          .from("documents")
+          .select("id")
+          .eq("id", documentId)
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+      if (existingDocumentError) {
+        console.error(
+          "Existing document lookup error:",
+          existingDocumentError,
+        );
+
+        return NextResponse.json(
+          { error: "Unable to check the document." },
+          { status: 500 },
+        );
+      }
+
+      isExistingDocument = !!existingDocument;
+    }
+
+    if (!isExistingDocument) {
+      const monthStart = new Date();
+      monthStart.setUTCDate(1);
+      monthStart.setUTCHours(0, 0, 0, 0);
+
+      const { count, error: documentCountError } = await admin
+        .from("documents")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", monthStart.toISOString());
+
+      if (documentCountError) {
+        console.error(
+          "Document count lookup error:",
+          documentCountError,
+        );
+
+        return NextResponse.json(
+          { error: "Unable to check your document usage." },
+          { status: 500 },
+        );
+      }
+
+      if ((count ?? 0) >= documentLimit) {
+        return NextResponse.json(
+          {
+            error: `You have reached your ${plan} plan limit of ${documentLimit} documents.`,
+            code: "DOCUMENT_LIMIT_REACHED",
+            plan,
+            limit: documentLimit,
+            count: count ?? 0,
+          },
+          { status: 403 },
+        );
+      }
+    }
 
     const allowedTones = [
       "Professional",
