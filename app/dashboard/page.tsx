@@ -112,6 +112,10 @@ export default function DashboardPage() {
   const [actionLoading, setActionLoading] = useState("");
   const [editing, setEditing] = useState(false);
   const [selectionActive, setSelectionActive] = useState(false);
+  const [selectionRange, setSelectionRange] = useState<{
+    start: number;
+    end: number;
+  } | null>(null);
   const [customInstruction, setCustomInstruction] = useState("");
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const [documentSearch, setDocumentSearch] = useState("");
@@ -450,11 +454,9 @@ export default function DashboardPage() {
   }
 
   function getEditorSelection() {
-    const editor = editorRef.current;
-    if (!editor) return null;
+    if (!selectionRange) return null;
 
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
+    const { start, end } = selectionRange;
 
     if (start === end) return null;
 
@@ -511,6 +513,8 @@ export default function DashboardPage() {
 
       updateContentWithHistory(updatedContent);
       saveDocument(updatedContent, format);
+      setSelectionRange(null);
+      setSelectionActive(false);
     } catch (err) {
       setError(
         err instanceof Error
@@ -575,6 +579,8 @@ export default function DashboardPage() {
 
       updateContentWithHistory(updatedContent);
       saveDocument(updatedContent, format);
+      setSelectionRange(null);
+      setSelectionActive(false);
     } catch (err) {
       setError(
         err instanceof Error
@@ -1758,8 +1764,12 @@ export default function DashboardPage() {
                       }
                       onSelect={(event) => {
                         const target = event.currentTarget;
-                        setSelectionActive(
-                          target.selectionStart !== target.selectionEnd,
+                        const start = target.selectionStart;
+                        const end = target.selectionEnd;
+
+                        setSelectionActive(start !== end);
+                        setSelectionRange(
+                          start !== end ? { start, end } : null,
                         );
                       }}
                       className="min-h-[500px] w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white"
