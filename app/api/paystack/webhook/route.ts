@@ -45,6 +45,35 @@ export async function POST(request: Request) {
 
     console.log("Paystack webhook received:", event.event);
 
+    if (event.event === "subscription.create") {
+      const subscription = event.data;
+      const userId = subscription?.metadata?.user_id;
+
+      if (userId && subscription?.subscription_code) {
+        const admin = createAdminClient();
+
+        const { error } = await admin
+          .from("billing_subscriptions")
+          .update({
+            paystack_customer_code:
+              subscription.customer?.customer_code || null,
+            paystack_subscription_code:
+              subscription.subscription_code,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId);
+
+        if (error) {
+          console.error("Subscription webhook update error:", error);
+
+          return NextResponse.json(
+            { error: "Unable to save subscription." },
+            { status: 500 },
+          );
+        }
+      }
+    }
+
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Paystack webhook error:", error);
