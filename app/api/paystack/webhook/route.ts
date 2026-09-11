@@ -2,6 +2,24 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+type PaystackEvent = {
+  event?: string;
+  data?: {
+    customer?: {
+      customer_code?: string;
+    };
+    subscription_code?: string;
+    status?: string;
+    next_payment_date?: string;
+    start?: string;
+    invoice?: {
+      customer?: {
+        customer_code?: string;
+      };
+    };
+  };
+};
+
 export async function POST(request: Request) {
   try {
     const secretKey = process.env.PAYSTACK_SECRET_KEY;
@@ -41,35 +59,108 @@ export async function POST(request: Request) {
       );
     }
 
-    const event = JSON.parse(rawBody);
+    const event = JSON.parse(rawBody) as PaystackEvent;
+    const eventName = event.event;
+    const data = event.data;
 
-    console.log("Paystack webhook received:", event.event);
+    console.log("Paystack webhook received:", eventName);
 
-    if (event.event === "subscription.create") {
-      const subscription = event.data;
-      const customerCode = subscription?.customer?.customer_code;
+    const customerCode =
+      data?.customer?.customer_code ??
+      data?.invoice?.customer?.customer_code;
 
-      if (customerCode && subscription?.subscription_code) {
-        const admin = createAdminClient();
+    if (!customerCode) {
+      return NextResponse.json({ received: true });
+    }
 
+    const admin = createAdminClient();
+
+    if (eventName === "subscription.create") {
+      if (data?.subscription_code) {
         const { error } = await admin
           .from("billing_subscriptions")
           .update({
             paystack_customer_code: customerCode,
-            paystack_subscription_code:
-              subscription.subscription_code,
+            paystack_subscription_code: data.subscription_code,
+            status: "active",
             updated_at: new Date().toISOString(),
           })
           .eq("paystack_customer_code", customerCode);
 
         if (error) {
-          console.error("Subscription webhook update error:", error);
+          console.error("Subscription create update error:", error);
 
           return NextResponse.json(
             { error: "Unable to save subscription." },
             { status: 500 },
           );
         }
+      }
+    }
+
+    if (eventName === "charge.success") {
+      const { error } = await admin
+        .from("billing_subscriptions")
+        .update({
+          status: "active",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("paystack_customer_code", customerCode);
+
+      if (error) {
+        console.error("Charge success update error:", error);
+
+        return NextResponse.json(
+          { error: "Unable to update subscription status." },
+          { status: 500 },
+        );
+      }
+    }
+
+    if (eventName === "invoice.payment_failed") {
+      console.warn(
+        "Paystack invoice payment failed for customer:",
+        customerCode,
+      );
+
+      return NextResponse.json({ received: true });
+    }
+
+    if (eventName === "subscription.not_renew") {
+      const { error } = await admin
+        .from("billing_subscriptions")
+        .update({
+          status: "cancelled",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("paystack_customer_code", customerCode);
+
+      if (error) {
+        console.error("Subscription cancellation update error:", error);
+
+        return NextResponse.json(
+          { error: "Unable to update subscription status." },
+          { status: 500 },
+        );
+      }
+    }
+
+    if (eventName === "subscription.disable") {
+      const { error } = await admin
+        .from("billing_subscriptions")
+        .update({
+          status: "expired",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("paystack_customer_code", customerCode);
+
+      if (error) {
+        console.error("Subscription disable update error:", error);
+
+        return NextResponse.json(
+          { error: "Unable to expire subscription." },
+          { status: 500 },
+        );
       }
     }
 
