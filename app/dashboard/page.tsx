@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -111,6 +111,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
   const [editing, setEditing] = useState(false);
+  const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const [documentSearch, setDocumentSearch] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -445,11 +446,31 @@ export default function DashboardPage() {
     }
   }
 
+  function getEditorSelection() {
+    const editor = editorRef.current;
+    if (!editor) return null;
+
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+
+    if (start === end) return null;
+
+    return {
+      text: content.slice(start, end),
+      start,
+      end,
+    };
+  }
+
   async function runWritingAction(action: string) {
     if (!content.trim()) {
       setError("Generate some content first.");
       return;
     }
+
+    const selection = editing ? getEditorSelection() : null;
+    const sourceContent = selection?.text || content;
+
 
     setActionLoading(action);
     setError("");
@@ -461,7 +482,7 @@ export default function DashboardPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          idea: content,
+          idea: sourceContent,
           type: action === "Rewrite" ? "Rewrite" : `${action} ${format}`,
           documentId: activeDocumentId,
         }),
@@ -473,11 +494,17 @@ export default function DashboardPage() {
         throw new Error(data.error || "Unable to process the content.");
       }
 
-      const updatedContent = data.content || "";
+      const generatedContent = data.content || "";
 
-      if (!updatedContent.trim()) {
+      if (!generatedContent.trim()) {
         throw new Error("The AI returned empty content.");
       }
+
+      const updatedContent = selection
+        ? content.slice(0, selection.start) +
+          generatedContent +
+          content.slice(selection.end)
+        : generatedContent;
 
       updateContentWithHistory(updatedContent);
       saveDocument(updatedContent, format);
@@ -1657,6 +1684,7 @@ export default function DashboardPage() {
                 {editing ? (
                   <div className="p-5 sm:p-8">
                     <textarea
+                      ref={editorRef}
                       value={content}
                       onChange={(event) =>
                         updateContentWithHistory(event.target.value)
