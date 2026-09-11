@@ -111,6 +111,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
   const [editing, setEditing] = useState(false);
+  const [selectionActive, setSelectionActive] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const [documentSearch, setDocumentSearch] = useState("");
   const [error, setError] = useState("");
@@ -1689,6 +1690,12 @@ export default function DashboardPage() {
                       onChange={(event) =>
                         updateContentWithHistory(event.target.value)
                       }
+                      onSelect={(event) => {
+                        const target = event.currentTarget;
+                        setSelectionActive(
+                          target.selectionStart !== target.selectionEnd,
+                        );
+                      }}
                       className="min-h-[500px] w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white"
                       placeholder="Write or edit your content here..."
                       spellCheck
@@ -1792,6 +1799,14 @@ export default function DashboardPage() {
                   >
                     Download PDF
                   </button>
+
+                  {editing && (
+                    <div className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                      {selectionActive
+                        ? "Selection active — AI actions will apply only to the selected text."
+                        : "Select text to apply AI actions to only that section."}
+                    </div>
+                  )}
 
                   {["Improve", "Shorten", "Expand", "Rewrite"].map((action) => (
                     <button
