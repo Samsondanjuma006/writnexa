@@ -2042,7 +2042,7 @@ export default function DashboardPage() {
                 price={billingInterval === "monthly" ? "₦2,500" : "₦25,000"}
                 period={billingInterval === "monthly" ? "/month" : "/year"}
                 documents="200 documents/month"
-                trial="7-day trial"
+                trial="No trial — billed at checkout"
                 onSelect={() => startPaystackCheckout("starter")}
               />
 
@@ -2051,7 +2051,7 @@ export default function DashboardPage() {
                 price={billingInterval === "monthly" ? "₦5,000" : "₦50,000"}
                 period={billingInterval === "monthly" ? "/month" : "/year"}
                 documents="500 documents/month"
-                trial="7-day trial"
+                trial="No trial — billed at checkout"
                 featured
                 onSelect={() => startPaystackCheckout("pro")}
               />
