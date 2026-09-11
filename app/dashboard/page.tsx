@@ -122,6 +122,8 @@ export default function DashboardPage() {
   const [renameTitle, setRenameTitle] = useState("");
   const [billingOpen, setBillingOpen] = useState(false);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "annually">("monthly");
+  const [billingPlan, setBillingPlan] = useState<"free" | "starter" | "pro">("free");
+  const [billingLimit, setBillingLimit] = useState(50);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -179,9 +181,41 @@ export default function DashboardPage() {
           return;
         }
 
-        const { count: totalDocuments, error: countError } = await supabase.from("documents").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+        const monthStart = new Date();
+        monthStart.setUTCDate(1);
+        monthStart.setUTCHours(0, 0, 0, 0);
+
+        const { count: monthlyDocuments, error: countError } = await supabase
+          .from("documents")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", monthStart.toISOString());
+
         if (!countError) {
-          setDocumentCount(totalDocuments ?? 0);
+          setDocumentCount(monthlyDocuments ?? 0);
+        }
+
+        const { data: subscription, error: subscriptionError } = await supabase
+          .from("billing_subscriptions")
+          .select("plan_code")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (subscriptionError) {
+          console.error("Unable to load billing subscription:", subscriptionError);
+        } else {
+          const plan = subscription?.plan_code;
+
+          if (plan === "starter") {
+            setBillingPlan("starter");
+            setBillingLimit(200);
+          } else if (plan === "pro") {
+            setBillingPlan("pro");
+            setBillingLimit(500);
+          } else {
+            setBillingPlan("free");
+            setBillingLimit(50);
+          }
         }
         const { data, error } = await supabase
           .from("documents")
@@ -1419,12 +1453,25 @@ export default function DashboardPage() {
 
         <div className="m-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold">Free plan</span>
-            <span className="text-[11px] text-slate-400">{documentCount} / 50</span>
+            <span className="text-xs font-semibold">
+              {billingPlan === "pro"
+                ? "Pro plan"
+                : billingPlan === "starter"
+                  ? "Starter plan"
+                  : "Free plan"}
+            </span>
+            <span className="text-[11px] text-slate-400">
+              {documentCount} / {billingLimit}
+            </span>
           </div>
 
           <div className="mt-3 h-1.5 rounded-full bg-slate-200">
-            <div className="h-full rounded-full bg-slate-900" style={{ width: `${Math.min((documentCount / 50) * 100, 100)}%` }} />
+            <div
+              className="h-full rounded-full bg-slate-900"
+              style={{
+                width: `${Math.min((documentCount / billingLimit) * 100, 100)}%`,
+              }}
+            />
           </div>
 
           <button
