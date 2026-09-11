@@ -28,6 +28,11 @@ export async function POST(request: Request) {
     const idea =
       typeof body.idea === "string" ? body.idea.trim() : "";
 
+    const instruction =
+      typeof body.instruction === "string"
+        ? body.instruction.trim()
+        : "";
+
     const documentId =
       typeof body.documentId === "string" ? body.documentId : null;
 
@@ -352,6 +357,14 @@ Tone requirements:
 - Persuasive: confident, compelling, and action-oriented.
 - Casual: relaxed, natural, and easy to read.
 - Creative: vivid, expressive, and engaging without becoming confusing.
+
+${instruction ? `
+Custom user instruction:
+${instruction}
+- Follow this instruction carefully.
+- Apply it to the requested content without inventing unsupported facts.
+- Do not mention the instruction or these rules in the response.
+` : ""}
 
 ${formatInstruction}
 

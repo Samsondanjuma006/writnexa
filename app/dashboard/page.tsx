@@ -112,6 +112,7 @@ export default function DashboardPage() {
   const [actionLoading, setActionLoading] = useState("");
   const [editing, setEditing] = useState(false);
   const [selectionActive, setSelectionActive] = useState(false);
+  const [customInstruction, setCustomInstruction] = useState("");
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const [documentSearch, setDocumentSearch] = useState("");
   const [error, setError] = useState("");
@@ -416,6 +417,7 @@ export default function DashboardPage() {
           type: format,
           tone,
           documentId: activeDocumentId,
+              instruction: customInstruction.trim(),
         }),
       });
 
@@ -514,6 +516,70 @@ export default function DashboardPage() {
         err instanceof Error
           ? err.message
           : "Something went wrong while editing the content.",
+      );
+    } finally {
+      setActionLoading("");
+    }
+  }
+
+  async function runCustomInstruction() {
+    if (!content.trim()) {
+      setError("Generate some content first.");
+      return;
+    }
+
+    const instruction = customInstruction.trim();
+
+    if (!instruction) {
+      setError("Enter a custom instruction first.");
+      return;
+    }
+
+    const selection = editing ? getEditorSelection() : null;
+    const sourceContent = selection?.text || content;
+
+    setActionLoading("Custom instruction");
+    setError("");
+
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          idea: sourceContent,
+          type: "Rewrite",
+          documentId: activeDocumentId,
+          instruction,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to process the instruction.");
+      }
+
+      const generatedContent = data.content || "";
+
+      if (!generatedContent.trim()) {
+        throw new Error("The AI returned empty content.");
+      }
+
+      const updatedContent = selection
+        ? content.slice(0, selection.start) +
+          generatedContent +
+          content.slice(selection.end)
+        : generatedContent;
+
+      updateContentWithHistory(updatedContent);
+      saveDocument(updatedContent, format);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while applying the instruction.",
       );
     } finally {
       setActionLoading("");
@@ -1807,6 +1873,37 @@ export default function DashboardPage() {
                         : "Select text to apply AI actions to only that section."}
                     </div>
                   )}
+
+                  <div className="w-full rounded-xl border border-slate-200 bg-white p-4">
+                    <label className="mb-2 block text-xs font-semibold text-slate-700">
+                      Custom AI instruction
+                    </label>
+                    <textarea
+                      value={customInstruction}
+                      onChange={(event) =>
+                        setCustomInstruction(event.target.value)
+                      }
+                      disabled={!!actionLoading || loading}
+                      rows={3}
+                      className="w-full resize-y rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                      placeholder="e.g. Make this more persuasive for small business owners..."
+                    />
+                    <p className="mt-2 text-xs text-slate-500">
+                      {selectionActive
+                        ? "Your instruction will apply only to the selected text."
+                        : "Your instruction will apply to the full document."}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={runCustomInstruction}
+                    disabled={!!actionLoading || loading || !customInstruction.trim()}
+                    className="w-full rounded-xl bg-slate-900 px-4 py-3 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {actionLoading === "Custom instruction"
+                      ? "Applying..."
+                      : "Apply instruction"}
+                  </button>
 
                   {["Improve", "Shorten", "Expand", "Rewrite"].map((action) => (
                     <button
