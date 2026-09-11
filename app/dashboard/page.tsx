@@ -130,6 +130,40 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
+    async function verifyPaystackReturn() {
+      const params = new URLSearchParams(window.location.search);
+      const reference =
+        params.get("reference") || params.get("trxref");
+
+      if (!reference) return;
+
+      try {
+        const response = await fetch(
+          `/api/paystack/verify?reference=${encodeURIComponent(reference)}`,
+          {
+            method: "GET",
+            cache: "no-store",
+          },
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.verified) {
+          setError(data.error || "Unable to verify the payment.");
+          return;
+        }
+
+        setError("");
+        window.history.replaceState({}, "", "/dashboard");
+      } catch {
+        setError("Unable to verify the payment.");
+      }
+    }
+
+    verifyPaystackReturn();
+  }, []);
+
+  useEffect(() => {
     async function loadDocuments() {
       try {
         const {
