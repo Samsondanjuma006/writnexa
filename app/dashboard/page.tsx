@@ -1454,7 +1454,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f7f5] text-slate-950">
+    <main className="min-h-screen bg-[#f7f7f5] text-slate-950 dark:bg-[#111113] dark:text-slate-100">
       {menuOpen && (
         <button
           aria-label="Close menu"
@@ -1464,11 +1464,11 @@ export default function DashboardPage() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-slate-200 bg-white transition-transform lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-slate-200 bg-white transition-transform dark:border-slate-700 dark:bg-[#1b1b1f] lg:translate-x-0 ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-20 items-center justify-between border-b border-slate-100 px-5">
+        <div className="flex h-20 items-center justify-between border-b border-slate-100 px-5 dark:border-slate-700">
           <a href="/" className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">
               <Sparkles size={19} />
@@ -1484,7 +1484,7 @@ export default function DashboardPage() {
 
           <button
             onClick={() => setMenuOpen(false)}
-            className="rounded-lg p-2 text-slate-400 lg:hidden"
+            className="rounded-lg p-2 text-slate-400 lg:hidden dark:text-slate-500"
           >
             <X size={19} />
           </button>
@@ -1587,11 +1587,11 @@ export default function DashboardPage() {
       </aside>
 
       <section className="min-h-screen lg:pl-[260px]">
-        <header className="flex h-20 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
+        <header className="flex h-20 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8 dark:border-slate-700 dark:bg-[#1b1b1f]">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMenuOpen(true)}
-              className="rounded-xl border border-slate-200 p-2.5 lg:hidden"
+              className="rounded-xl border border-slate-200 p-2.5 lg:hidden dark:border-slate-700"
             >
               <Menu size={19} />
             </button>
@@ -1605,7 +1605,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="hidden rounded-xl border border-slate-200 p-2.5 sm:block">
+            <button className="hidden rounded-xl border border-slate-200 p-2.5 sm:block dark:border-slate-700">
               <Search size={18} />
             </button>
 
@@ -1756,7 +1756,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-[#1b1b1f]">
                 {editing ? (
                   <div className="p-5 sm:p-8">
                     <textarea
@@ -1775,7 +1775,7 @@ export default function DashboardPage() {
                           start !== end ? { start, end } : null,
                         );
                       }}
-                      className="min-h-[500px] w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white"
+                      className="min-h-[500px] w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white dark:border-slate-700 dark:bg-[#27272a] dark:text-slate-100 dark:focus:border-slate-500 dark:focus:bg-[#27272a]"
                       placeholder="Write or edit your content here..."
                       spellCheck
                     />
@@ -1818,11 +1818,11 @@ export default function DashboardPage() {
                   </article>
                 )}
 
-                <div className="flex flex-wrap gap-2 border-t border-slate-100 p-5">
+                <div className="flex flex-wrap gap-2 border-t border-slate-100 p-5 dark:border-slate-700">
                   <button
                     onClick={undoContent}
                     disabled={historyIndex <= 0 || !!actionLoading}
-                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     ↶ Undo
                   </button>
@@ -1834,7 +1834,7 @@ export default function DashboardPage() {
                       historyIndex >= contentHistory.length - 1 ||
                       !!actionLoading
                     }
-                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     ↷ Redo
                   </button>
@@ -1850,7 +1850,7 @@ export default function DashboardPage() {
                   <button
                     onClick={downloadContent}
                     disabled={!!actionLoading}
-                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Download TXT
                   </button>
@@ -1858,7 +1858,7 @@ export default function DashboardPage() {
                   <button
                     onClick={downloadMarkdown}
                     disabled={!!actionLoading}
-                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Download Markdown
                   </button>
@@ -1866,7 +1866,7 @@ export default function DashboardPage() {
                   <button
                     onClick={downloadDocx}
                     disabled={!!actionLoading}
-                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Download DOCX
                   </button>
@@ -1874,21 +1874,21 @@ export default function DashboardPage() {
                   <button
                     onClick={downloadPdf}
                     disabled={!!actionLoading}
-                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Download PDF
                   </button>
 
                   {editing && (
-                    <div className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                    <div className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-[#27272a] dark:text-slate-300">
                       {selectionActive
                         ? "Selection active — AI actions will apply only to the selected text."
                         : "Select text to apply AI actions to only that section."}
                     </div>
                   )}
 
-                  <div className="w-full rounded-xl border border-slate-200 bg-white p-4">
-                    <label className="mb-2 block text-xs font-semibold text-slate-700">
+                  <div className="w-full rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-[#1b1b1f]">
+                    <label className="mb-2 block text-xs font-semibold text-slate-700 dark:text-slate-200">
                       Custom AI instruction
                     </label>
                     <textarea
@@ -1898,7 +1898,7 @@ export default function DashboardPage() {
                       }
                       disabled={!!actionLoading || loading}
                       rows={3}
-                      className="w-full resize-y rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                      className="w-full resize-y rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white dark:border-slate-700 dark:bg-[#27272a] dark:text-slate-100 dark:focus:border-slate-500 dark:focus:bg-[#27272a] disabled:cursor-not-allowed disabled:opacity-50"
                       placeholder="e.g. Make this more persuasive for small business owners..."
                     />
                     <p className="mt-2 text-xs text-slate-500">
@@ -1923,7 +1923,7 @@ export default function DashboardPage() {
                       key={action}
                       onClick={() => runWritingAction(action)}
                       disabled={!!actionLoading || loading}
-                      className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {actionLoading === action ? "Working..." : action}
                     </button>
