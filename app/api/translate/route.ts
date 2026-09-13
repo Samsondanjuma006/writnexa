@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "openrouter/free";
+const GEMINI_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent";
 
+const MODEL = "gemini-3.6-flash";
 const MAX_INPUT_LENGTH = 8000;
 
 export async function POST(request: Request) {
@@ -10,7 +11,9 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const text =
-      typeof body.text === "string" ? body.text.trim() : "";
+      typeof body.text === "string"
+        ? body.text.trim()
+        : "";
 
     const sourceLanguage =
       typeof body.sourceLanguage === "string" &&
@@ -22,175 +25,144 @@ export async function POST(request: Request) {
       typeof body.targetLanguage === "string" &&
       body.targetLanguage.trim()
         ? body.targetLanguage.trim()
-        : "";
+        : "English";
 
     if (!text) {
       return NextResponse.json(
         { error: "Please enter text to translate." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (text.length > MAX_INPUT_LENGTH) {
       return NextResponse.json(
         {
-          error: `Please keep the text under ${MAX_INPUT_LENGTH.toLocaleString()} characters.`,
+          error: `Text is too long. Please keep it under ${MAX_INPUT_LENGTH.toLocaleString()} characters.`,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    if (!targetLanguage) {
+    if (
+      !targetLanguage ||
+      targetLanguage.toLowerCase() === "auto-detect"
+    ) {
       return NextResponse.json(
         { error: "Please select a target language." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
+      console.error("GEMINI_API_KEY is not configured.");
+
       return NextResponse.json(
         { error: "Translation service is not configured." },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
-    const prompt = `
-You are Writnexa's professional translation engine.
+    const sourceInstruction =
+      sourceLanguage.toLowerCase() === "auto-detect"
+        ? "Automatically detect the source language."
+        : `The source language is ${sourceLanguage}.`;
 
-Translate the user's text from ${sourceLanguage} into ${targetLanguage}.
+    const prompt = `You are Writnexa's professional translation engine.
+
+Translate the user's text into ${targetLanguage}.
+
+${sourceInstruction}
 
 Translation requirements:
-- Preserve the exact meaning, intent, facts, names, numbers, dates, URLs, product names, and technical terms in the source.
-- Do not add information, explanations, opinions, examples, or assumptions that are not present in the source.
+- Preserve the exact meaning, intent, facts, names, numbers, dates, URLs, product names, and technical terms.
+- Do not add information, explanations, opinions, examples, or commentary.
 - Do not omit meaningful information.
 - Translate meaning and intent, not individual words.
-- Use natural, fluent, idiomatic language that a well-educated native speaker would actually use.
-- Prefer established native vocabulary and natural sentence patterns over literal translations.
-- Never force an English sentence structure onto the target language.
-- If a literal translation sounds unnatural, rewrite it naturally while preserving the original meaning.
+- Use natural, fluent, idiomatic ${targetLanguage}.
+- The result should sound like it was originally written by a well-educated native speaker of ${targetLanguage}.
+- Do not copy English sentence structure when it produces unnatural target-language wording.
 - Preserve the original tone, intent, audience, and level of formality.
-- Preserve paragraph breaks and meaningful formatting where practical.
-- Keep proper names, brand names, URLs, and technical terms unchanged unless there is a well-established target-language form.
-- Return ONLY the translated text.
+- Preserve paragraphs, line breaks, and meaningful formatting where practical.
+- Keep brand names, URLs, usernames, product names, and technical terms unchanged when there is no natural established translation.
+- For Yoruba, Hausa, Igbo, and other African languages, use standard modern language and authentic contemporary usage. Do not invent vocabulary or use awkward literal translations.
+- For Yoruba, use correct modern Yoruba grammar and diacritics where appropriate.
+- For Hausa, use standard modern Hausa grammar and vocabulary.
+- For Igbo, use standard modern Igbo grammar, vocabulary, and natural sentence structure.
+- If a technical term has no natural established equivalent, retain the original technical term rather than inventing an unnatural translation.
+- Silently review your translation before returning it for unnatural wording, literal calques, incorrect word choices, grammar problems, missing meaning, or inappropriate vocabulary.
+- Return ONLY the translated text. Do not include explanations, labels, quotation marks, or commentary.
 
-QUALITY STANDARD:
-The translation should read as though it was originally written by a fluent native speaker of ${targetLanguage}, not as machine-translated English.
-Before returning the answer, silently review it for unnatural wording, literal calques, incorrect word choices, grammar problems, missing meaning, and inappropriate vocabulary. Rewrite any awkward sentence before returning it.
+Text to translate:
+${text}`;
 
-LOWER-RESOURCE AND AFRICAN LANGUAGES:
-For Yoruba, Hausa, Igbo, Swahili, and other African languages, prioritize authentic modern native usage over literal English equivalents. Do not invent vocabulary merely to match individual English words. When several translations are possible, choose the phrasing most natural in ordinary modern writing and speech.
-
-YORUBA:
-- Use standard modern Yoruba with correct grammar and appropriate tone marks/diacritics where naturally required.
-- Prefer common native Yoruba expressions over artificial or dictionary-like constructions.
-- Translate concepts according to their meaning in context rather than mapping each English word to a Yoruba word.
-- Avoid unnecessarily formal, archaic, or invented vocabulary.
-- For technology, business, creator, content, and digital concepts, use terminology that educated contemporary Yoruba speakers would naturally understand; retain an English technical term when a forced Yoruba equivalent would sound unnatural.
-- After drafting, silently check that every sentence sounds natural to a native Yoruba speaker.
-
-HAUSA:
-- Use standard modern Hausa with natural Hausa sentence structure and vocabulary.
-- Avoid copying English syntax.
-- Prefer common Hausa expressions used in contemporary communication, business, technology, and everyday speech.
-- Do not invent Hausa words simply to translate every English word literally.
-
-IGBO:
-- Use standard modern Igbo with natural Igbo grammar, vocabulary, and sentence structure.
-- Avoid English word order when it produces unnatural Igbo.
-- Prefer commonly understood contemporary Igbo expressions.
-- Do not invent vocabulary simply to create a one-to-one equivalent for every English word.
-
-SWAHILI:
-- Use standard modern Swahili with natural grammar and vocabulary.
-- Prefer established contemporary usage rather than literal English syntax.
-
-If the target language is a lower-resource language and the exact technical term has no widely accepted native equivalent, keep the technical term in a natural way rather than inventing an unnatural translation.
-
-SOURCE TEXT:
-${text}
-`;
-
-    const response = await fetch(OPENROUTER_URL, {
+    const response = await fetch(`${GEMINI_URL}?key=${encodeURIComponent(apiKey)}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://writnexa.vercel.app",
-        "X-Title": "Writnexa Translator",
       },
       body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are Writnexa, a high-quality multilingual translation assistant. Return only the translation requested by the user.",
-          },
+        contents: [
           {
             role: "user",
-            content: prompt,
+            parts: [{ text: prompt }],
           },
         ],
-        max_tokens: 4000,
-        temperature: 0.2,
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 2000,
+        },
       }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("OpenRouter translation error:", data);
+      console.error("Gemini translation error:", data);
+
+      const message =
+        data?.error?.message ||
+        "The translation service could not complete the request.";
 
       return NextResponse.json(
-        {
-          error:
-            data?.error?.message ||
-            "The translation service is temporarily unavailable.",
-        },
-        { status: 503 },
+        { error: message },
+        { status: response.status >= 400 && response.status < 600 ? response.status : 502 }
       );
     }
 
-    const choice = data?.choices?.[0];
-    const translatedText =
-      choice?.message?.content?.trim() || "";
+    const translation =
+      data?.candidates?.[0]?.content?.parts
+        ?.filter(
+          (part: unknown): part is { text: string } =>
+            typeof part === "object" &&
+            part !== null &&
+            "text" in part &&
+            typeof (part as { text?: unknown }).text === "string"
+        )
+        .map((part: { text: string }) => part.text)
+        .join("")
+        .trim() || "";
 
-    const finishReason = choice?.finish_reason;
+    if (!translation) {
+      console.error("Gemini returned no translation:", data);
 
-    if (finishReason === "length") {
       return NextResponse.json(
-        {
-          error:
-            "The translation was incomplete. Please try a shorter text.",
-        },
-        { status: 503 },
-      );
-    }
-
-    if (!translatedText) {
-      return NextResponse.json(
-        { error: "The translation service returned empty content." },
-        { status: 503 },
+        { error: "The translation service returned an empty result." },
+        { status: 502 }
       );
     }
 
     return NextResponse.json({
-      translation: translatedText,
-      model: data?.model || MODEL,
+      translation,
+      model: MODEL,
     });
   } catch (error) {
-    console.error("Writnexa translation error:", error);
+    console.error("Translation API error:", error);
 
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to translate the text.",
-      },
-      { status: 500 },
+      { error: "Unable to translate the text right now. Please try again." },
+      { status: 500 }
     );
   }
 }
