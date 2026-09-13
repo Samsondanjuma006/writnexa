@@ -518,7 +518,11 @@ export default function DashboardPage() {
       return;
     }
 
-    const selection = editing ? getEditorSelection() : null;
+    const selection = action === "Continue"
+      ? null
+      : editing
+        ? getEditorSelection()
+        : null;
     const sourceContent = selection?.text || content;
 
 
@@ -534,7 +538,10 @@ export default function DashboardPage() {
         body: JSON.stringify({
           idea: sourceContent,
           type:
-            action === "Rewrite" || action === "Summarize" || action === "Translate"
+            action === "Rewrite" ||
+            action === "Summarize" ||
+            action === "Translate" ||
+            action === "Continue"
               ? action
               : `${action} ${format}`,
           documentId: activeDocumentId,
@@ -556,11 +563,14 @@ export default function DashboardPage() {
         throw new Error("The AI returned empty content.");
       }
 
-      const updatedContent = selection
-        ? content.slice(0, selection.start) +
-          generatedContent +
-          content.slice(selection.end)
-        : generatedContent;
+      const updatedContent =
+        action === "Continue"
+          ? content.trimEnd() + "\n\n" + generatedContent.trim()
+          : selection
+            ? content.slice(0, selection.start) +
+              generatedContent +
+              content.slice(selection.end)
+            : generatedContent;
 
       updateContentWithHistory(updatedContent);
       saveDocument(updatedContent, format);
@@ -1966,7 +1976,7 @@ export default function DashboardPage() {
                       : "Apply instruction"}
                   </button>
 
-                  {["Improve", "Shorten", "Expand", "Rewrite", "Summarize", "Translate"].map((action) => (
+                  {["Improve", "Shorten", "Expand", "Rewrite", "Summarize", "Continue", "Translate"].map((action) => (
                     <button
                       key={action}
                       onClick={() => action === "Translate" ? setSelectedAction("Translate") : runWritingAction(action)}

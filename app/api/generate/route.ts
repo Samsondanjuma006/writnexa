@@ -171,7 +171,21 @@ export async function POST(request: Request) {
 
     const normalizedType = type.toLowerCase();
 
-    if (normalizedType === "summarize") {
+    if (normalizedType === "continue") {
+      formatInstruction = `
+Continue writing from the existing content provided by the user.
+
+Requirements:
+- Continue directly from the end of the existing content.
+- Preserve the same topic, purpose, tone, style, and point of view.
+- Do not rewrite, repeat, summarize, or modify the existing content.
+- Do not restart the introduction or add a new title.
+- Continue naturally as if the same writer wrote the next section.
+- Add useful new material that logically follows from the existing content.
+- Do not invent facts, statistics, quotes, names, companies, or personal experiences.
+- Return only the new continuation.
+`;
+    } else if (normalizedType === "summarize") {
       formatInstruction = `
 Summarize the existing content provided by the user.
 
