@@ -488,7 +488,10 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({
           idea: sourceContent,
-          type: action === "Rewrite" ? "Rewrite" : `${action} ${format}`,
+          type:
+            action === "Rewrite" || action === "Summarize" || action === "Translate"
+              ? action
+              : `${action} ${format}`,
           documentId: activeDocumentId,
         }),
       });
@@ -1915,7 +1918,7 @@ export default function DashboardPage() {
                       : "Apply instruction"}
                   </button>
 
-                  {["Improve", "Shorten", "Expand", "Rewrite", "Summarize"].map((action) => (
+                  {["Improve", "Shorten", "Expand", "Rewrite", "Summarize", "Translate"].map((action) => (
                     <button
                       key={action}
                       onClick={() => runWritingAction(action)}

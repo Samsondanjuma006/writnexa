@@ -34,6 +34,7 @@ export default function SettingsPage() {
   const [email, setEmail] = useState("");
   const [format, setFormat] = useState("Blog post");
   const [tone, setTone] = useState("Professional");
+  const [theme, setTheme] = useState("system");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -67,6 +68,9 @@ export default function SettingsPage() {
         const savedTone = window.localStorage.getItem(
           "writnexa-default-tone",
         );
+        const savedTheme = window.localStorage.getItem(
+          "writnexa-theme",
+        );
 
         if (savedFormat && formats.includes(savedFormat)) {
           setFormat(savedFormat);
@@ -74,6 +78,13 @@ export default function SettingsPage() {
 
         if (savedTone && tones.includes(savedTone)) {
           setTone(savedTone);
+        }
+
+        if (
+          savedTheme &&
+          ["light", "dark", "system"].includes(savedTheme)
+        ) {
+          setTheme(savedTheme);
         }
       } catch (err) {
         console.error("Unable to load settings:", err);
@@ -91,6 +102,16 @@ export default function SettingsPage() {
     loadSettings();
   }, []);
 
+  function applyTheme(nextTheme: string) {
+    const root = document.documentElement;
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const shouldUseDark =
+      nextTheme === "dark" || (nextTheme === "system" && prefersDark);
+
+    root.classList.toggle("dark", shouldUseDark);
+    window.localStorage.setItem("writnexa-theme", nextTheme);
+  }
+
   function savePreferences() {
     setSaving(true);
     setSaved(false);
@@ -99,6 +120,7 @@ export default function SettingsPage() {
     try {
       window.localStorage.setItem("writnexa-default-format", format);
       window.localStorage.setItem("writnexa-default-tone", tone);
+      applyTheme(theme);
 
       setSaved(true);
 
@@ -204,6 +226,45 @@ export default function SettingsPage() {
                 <p className="mt-1 text-xs leading-5 text-slate-500">
                   Choose the format and tone you want to use by default.
                 </p>
+              </div>
+
+              <div className="mt-6 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <div>
+                  <p className="text-xs font-bold text-slate-700">
+                    Appearance
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Choose how Writnexa looks on your device.
+                  </p>
+                </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  {[
+                    { value: "light", label: "Light", icon: "☀️" },
+                    { value: "dark", label: "Dark", icon: "🌙" },
+                    { value: "system", label: "System", icon: "🖥️" },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setTheme(option.value);
+                        applyTheme(option.value);
+                        setSaved(false);
+                      }}
+                      className={`rounded-xl border px-4 py-3 text-left transition ${
+                        theme === option.value
+                          ? "border-slate-950 bg-white shadow-sm"
+                          : "border-slate-200 bg-white hover:bg-slate-100"
+                      }`}
+                    >
+                      <span className="text-base">{option.icon}</span>
+                      <span className="ml-2 text-xs font-bold">
+                        {option.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="mt-6 grid gap-5 sm:grid-cols-2">

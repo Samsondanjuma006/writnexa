@@ -180,6 +180,18 @@ Requirements:
 - Do not add a title unless the source content already contains one.
 - Return only the summary.
 `;
+    } else if (normalizedType === "translate") {
+      formatInstruction = `
+Translate the existing content into the target language requested by the user.
+
+Requirements:
+- Preserve the original meaning, facts, names, numbers, and important details.
+- Use natural, fluent language appropriate for the target language.
+- Do not add new information, opinions, examples, or explanations.
+- Do not remove important meaning from the original content.
+- Preserve the original tone and intent as closely as possible.
+- Return only the translated content.
+`;
     } else if (normalizedType.startsWith("improve ")) {
       formatInstruction = `
 Improve the existing content provided by the user.
