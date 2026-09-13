@@ -27,6 +27,49 @@ import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
+const translationLanguages = [
+  "English",
+  "Spanish",
+  "French",
+  "Portuguese",
+  "German",
+  "Italian",
+  "Dutch",
+  "Russian",
+  "Ukrainian",
+  "Polish",
+  "Turkish",
+  "Greek",
+  "Romanian",
+  "Arabic",
+  "Hebrew",
+  "Persian",
+  "Hindi",
+  "Bengali",
+  "Urdu",
+  "Punjabi",
+  "Gujarati",
+  "Marathi",
+  "Tamil",
+  "Telugu",
+  "Kannada",
+  "Malayalam",
+  "Chinese (Simplified)",
+  "Chinese (Traditional)",
+  "Japanese",
+  "Korean",
+  "Indonesian",
+  "Malay",
+  "Vietnamese",
+  "Thai",
+  "Swahili",
+  "Hausa",
+  "Yoruba",
+  "Igbo",
+  "Amharic",
+  "Afrikaans",
+];
+
 const formats = [
   {
     title: "Blog post",
@@ -105,6 +148,8 @@ export default function DashboardPage() {
   const [idea, setIdea] = useState("");
   const [format, setFormat] = useState("Blog post");
   const [tone, setTone] = useState("Professional");
+  const [translateLanguage, setTranslateLanguage] = useState("Spanish");
+  const [selectedAction, setSelectedAction] = useState("");
   const [content, setContent] = useState("");
   const [contentHistory, setContentHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -493,6 +538,9 @@ export default function DashboardPage() {
               ? action
               : `${action} ${format}`,
           documentId: activeDocumentId,
+          ...(action === "Translate"
+            ? { targetLanguage: translateLanguage }
+            : {}),
         }),
       });
 
@@ -1921,13 +1969,43 @@ export default function DashboardPage() {
                   {["Improve", "Shorten", "Expand", "Rewrite", "Summarize", "Translate"].map((action) => (
                     <button
                       key={action}
-                      onClick={() => runWritingAction(action)}
+                      onClick={() => action === "Translate" ? setSelectedAction("Translate") : runWritingAction(action)}
                       disabled={!!actionLoading || loading}
                       className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {actionLoading === action ? "Working..." : action}
                     </button>
                   ))}
+
+                  {selectedAction === "Translate" && (
+                    <div className="mt-2 flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-[#1b1b1f]">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        Translate to
+                      </label>
+                      <select
+                        value={translateLanguage}
+                        onChange={(event) => setTranslateLanguage(event.target.value)}
+                        disabled={!!actionLoading || loading}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-[#27272a] dark:text-slate-100"
+                      >
+                        {translationLanguages.map((language) => (
+                          <option key={language} value={language}>
+                            {language}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => {
+                          runWritingAction("Translate");
+                          setSelectedAction("");
+                        }}
+                        disabled={!!actionLoading || loading}
+                        className="rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {actionLoading === "Translate" ? "Translating..." : "Translate"}
+                      </button>
+                    </div>
+                  )}
 
                   <button
                     onClick={() => setEditing((current) => !current)}

@@ -33,6 +33,11 @@ export async function POST(request: Request) {
         ? body.instruction.trim()
         : "";
 
+    const targetLanguage =
+      typeof body.targetLanguage === "string" && body.targetLanguage.trim()
+        ? body.targetLanguage.trim()
+        : "Spanish";
+
     const documentId =
       typeof body.documentId === "string" ? body.documentId : null;
 
@@ -182,7 +187,7 @@ Requirements:
 `;
     } else if (normalizedType === "translate") {
       formatInstruction = `
-Translate the existing content into the target language requested by the user.
+Translate the existing content into ${targetLanguage}.
 
 Requirements:
 - Preserve the original meaning, facts, names, numbers, and important details.
