@@ -1915,7 +1915,7 @@ export default function DashboardPage() {
                       : "Apply instruction"}
                   </button>
 
-                  {["Improve", "Shorten", "Expand", "Rewrite"].map((action) => (
+                  {["Improve", "Shorten", "Expand", "Rewrite", "Summarize"].map((action) => (
                     <button
                       key={action}
                       onClick={() => runWritingAction(action)}

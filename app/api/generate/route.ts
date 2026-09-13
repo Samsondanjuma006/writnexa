@@ -166,7 +166,21 @@ export async function POST(request: Request) {
 
     const normalizedType = type.toLowerCase();
 
-    if (normalizedType.startsWith("improve ")) {
+    if (normalizedType === "summarize") {
+      formatInstruction = `
+Summarize the existing content provided by the user.
+
+Requirements:
+- Preserve the main meaning, key facts, and most important ideas.
+- Remove repetition, filler, minor details, and unnecessary wording.
+- Make the result substantially shorter than the original.
+- Keep the summary clear, accurate, and easy to understand.
+- Do not add new facts, examples, opinions, statistics, or conclusions.
+- Do not change the original topic or meaning.
+- Do not add a title unless the source content already contains one.
+- Return only the summary.
+`;
+    } else if (normalizedType.startsWith("improve ")) {
       formatInstruction = `
 Improve the existing content provided by the user.
 
