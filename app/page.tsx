@@ -2,7 +2,6 @@
 
 import {
   ArrowRight,
-  BookOpen,
   Check,
   ChevronDown,
   FileText,
@@ -21,35 +20,68 @@ const tools = [
     icon: FileText,
     title: "Blog posts",
     description: "Turn your ideas into polished, SEO-ready articles.",
+    href: "/signup",
   },
   {
     icon: PenLine,
     title: "Social content",
     description: "Create engaging posts for every major platform.",
+    href: "/signup",
   },
   {
     icon: Video,
     title: "Video scripts",
     description: "Build hooks, scripts and descriptions that keep people watching.",
+    href: "/signup",
   },
-];
-
-const benefits = [
-  "Write faster without losing your voice",
-  "Create content for multiple platforms",
-  "Turn rough ideas into polished drafts",
-  "Keep your brand voice consistent",
+  {
+    icon: FileText,
+    title: "Professional emails",
+    description: "Write clear, polished emails for clients, teams and business communication.",
+    href: "/signup",
+  },
+  {
+    icon: FileText,
+    title: "Business proposals",
+    description: "Turn ideas into structured proposals that communicate value clearly.",
+    href: "/signup",
+  },
+  {
+    icon: WandSparkles,
+    title: "Rewrite & improve",
+    description: "Rewrite existing content for clearer structure, stronger tone and better impact.",
+    href: "/signup",
+  },
+  {
+    icon: Sparkles,
+    title: "Summarize",
+    description: "Turn longer content into concise summaries that keep the important points.",
+    href: "/signup",
+  },
+  {
+    icon: PenLine,
+    title: "Continue writing",
+    description: "Pick up where you stopped and keep your content flowing naturally.",
+    href: "/signup",
+  },
+  {
+    icon: FileText,
+    title: "Translate",
+    description: "Translate content across dozens of languages with a dedicated public translator.",
+    href: "/translator",
+  },
 ];
 
 export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">("monthly");
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#faf9f7] text-[#18181b]">
       {/* Navigation */}
       <nav className="relative z-50 border-b border-black/[0.06] bg-[#faf9f7]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
-          <a href="#" className="flex items-center gap-2.5">
+          <a href="/" className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#18181b] text-white shadow-lg shadow-black/10">
               <Sparkles size={18} strokeWidth={2.2} />
             </span>
@@ -77,16 +109,22 @@ export default function Home() {
             >
               Pricing
             </a>
+            <a
+              href="/translator"
+              className="text-sm font-medium text-zinc-600 transition hover:text-zinc-950"
+            >
+              Translator
+            </a>
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
-            <button className="rounded-full px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-black/[0.04]">
+            <a href="/login" className="rounded-full px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-black/[0.04]">
               Sign in
-            </button>
-            <button className="flex items-center gap-2 rounded-full bg-[#18181b] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-zinc-800">
+            </a>
+            <a href="/signup" className="flex items-center gap-2 rounded-full bg-[#18181b] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-zinc-800">
               Start writing
               <ArrowRight size={15} />
-            </button>
+            </a>
           </div>
 
           <button
@@ -110,9 +148,15 @@ export default function Home() {
               <a href="#pricing" className="font-medium">
                 Pricing
               </a>
-              <button className="mt-2 rounded-full bg-[#18181b] px-5 py-3 font-semibold text-white">
+              <a href="/translator" className="font-medium">
+                Translator
+              </a>
+              <a href="/login" className="mt-2 rounded-full border border-black/[0.08] px-5 py-3 text-center font-semibold">
+                Sign in
+              </a>
+              <a href="/signup" className="rounded-full bg-[#18181b] px-5 py-3 text-center font-semibold text-white">
                 Start writing
-              </button>
+              </a>
             </div>
           </div>
         )}
@@ -128,19 +172,18 @@ export default function Home() {
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-orange-600">
                 <WandSparkles size={12} />
               </span>
-              Your new AI writing workspace
+              AI writing, made simple
             </div>
 
             <h1 className="text-balance text-5xl font-bold leading-[0.98] tracking-[-0.065em] sm:text-7xl lg:text-[88px]">
-              Your ideas deserve
+              Write better.
               <span className="block bg-gradient-to-r from-orange-500 via-rose-500 to-violet-600 bg-clip-text text-transparent">
-                better words.
+                Create faster.
               </span>
             </h1>
 
             <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-zinc-600 sm:text-lg">
-              Writnexa turns rough ideas into polished blogs, social posts,
-              video scripts and more — while helping you keep your own voice.
+              Turn rough ideas into polished content with AI — from blog posts and social content to emails, proposals, video scripts, rewrites, summaries, and translations.
             </p>
 
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -155,10 +198,10 @@ export default function Home() {
                 />
               </a>
 
-              <button className="flex h-13 w-full items-center justify-center gap-2 rounded-full border border-black/[0.09] bg-white/70 px-7 text-sm font-semibold text-zinc-700 transition hover:bg-white sm:w-auto">
+              <a href="#how-it-works" className="flex h-13 w-full items-center justify-center gap-2 rounded-full border border-black/[0.09] bg-white/70 px-7 text-sm font-semibold text-zinc-700 transition hover:bg-white sm:w-auto">
                 <Play size={15} fill="currentColor" />
                 See how it works
-              </button>
+              </a>
             </div>
 
             <div className="mt-6 flex items-center justify-center gap-2 text-xs text-zinc-500">
@@ -169,100 +212,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Product preview */}
-          <div className="relative mx-auto mt-16 max-w-6xl sm:mt-20">
-            <div className="absolute -inset-4 rounded-[32px] bg-gradient-to-r from-orange-200/30 via-transparent to-violet-200/30 blur-2xl" />
-
-            <div className="relative overflow-hidden rounded-2xl border border-black/[0.08] bg-white shadow-[0_30px_100px_-30px_rgba(0,0,0,0.25)] sm:rounded-3xl">
-              <div className="flex h-12 items-center border-b border-black/[0.06] bg-white px-4 sm:h-14 sm:px-5">
-                <div className="flex gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-zinc-200" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-zinc-200" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-zinc-200" />
-                </div>
-
-                <div className="mx-auto hidden items-center gap-2 rounded-lg bg-zinc-50 px-3 py-1.5 text-xs text-zinc-500 sm:flex">
-                  <Sparkles size={12} />
-                  Writnexa
-                </div>
-              </div>
-
-              <div className="grid min-h-[430px] md:grid-cols-[220px_1fr]">
-                <aside className="hidden border-r border-black/[0.06] bg-[#fcfcfb] p-4 md:block">
-                  <div className="mb-7 flex items-center gap-2 text-sm font-bold">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#18181b] text-white">
-                      <Sparkles size={13} />
-                    </span>
-                    Writnexa
-                  </div>
-
-                  <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                    Create
-                  </p>
-
-                  <div className="space-y-1">
-                    {["Blog post", "Social post", "Video script", "Rewrite"].map(
-                      (item, index) => (
-                        <div
-                          key={item}
-                          className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium ${
-                            index === 0
-                              ? "bg-zinc-100 text-zinc-900"
-                              : "text-zinc-500"
-                          }`}
-                        >
-                          {index === 0 ? (
-                            <BookOpen size={14} />
-                          ) : (
-                            <PenLine size={14} />
-                          )}
-                          {item}
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </aside>
-
-                <div className="p-6 sm:p-9">
-                  <div className="mx-auto max-w-2xl">
-                    <div className="mb-6">
-                      <p className="text-xs font-semibold text-orange-500">
-                        BLOG POST
-                      </p>
-                      <h3 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-                        Create content your audience remembers
-                      </h3>
-                    </div>
-
-                    <div className="rounded-2xl border border-black/[0.07] bg-[#fcfcfb] p-4 shadow-sm sm:p-5">
-                      <p className="text-sm leading-6 text-zinc-500">
-                        Write an article about how small businesses can use AI
-                        to save time and grow their audience...
-                      </p>
-
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        <span className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-medium text-zinc-500 shadow-sm ring-1 ring-black/[0.05]">
-                          Professional
-                        </span>
-                        <span className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-medium text-zinc-500 shadow-sm ring-1 ring-black/[0.05]">
-                          Medium length
-                        </span>
-                        <span className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-medium text-zinc-500 shadow-sm ring-1 ring-black/[0.05]">
-                          SEO friendly
-                        </span>
-                      </div>
-
-                      <button className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#18181b] py-3 text-xs font-semibold text-white">
-                        <Sparkles size={14} />
-                        Generate content
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
+
       </section>
 
       {/* Features */}
@@ -286,8 +237,9 @@ export default function Home() {
               const Icon = tool.icon;
 
               return (
-                <div
+                <a
                   key={tool.title}
+                  href={tool.href}
                   className="group rounded-3xl border border-black/[0.07] bg-[#faf9f7] p-7 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/[0.06]"
                 >
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-black/[0.05]">
@@ -308,7 +260,7 @@ export default function Home() {
                       className="transition-transform group-hover:translate-x-1"
                     />
                   </div>
-                </div>
+                </a>
               );
             })}
           </div>
@@ -329,15 +281,15 @@ export default function Home() {
               </h2>
 
               <p className="mt-5 max-w-lg text-base leading-7 text-zinc-600">
-                You bring the idea. Writnexa helps shape it into something
-                worth publishing.
+                Start with an idea, give Writnexa the direction you want,
+                then refine the result until it feels like your own.
               </p>
 
               <div className="mt-9 space-y-5">
                 {[
-                  ["01", "Tell us what you want to create."],
-                  ["02", "Choose your audience, tone and format."],
-                  ["03", "Generate, refine and make it yours."],
+                  ["01", "Start with an idea, draft or piece of content."],
+                  ["02", "Choose your format, tone and writing direction."],
+                  ["03", "Generate, refine and make the final result yours."],
                 ].map(([number, text]) => (
                   <div key={number} className="flex items-center gap-4">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#18181b] text-xs font-bold text-white">
@@ -355,7 +307,7 @@ export default function Home() {
               <div className="rounded-2xl bg-[#18181b] p-6 text-white sm:p-8">
                 <div className="flex items-center gap-2 text-xs text-zinc-400">
                   <Sparkles size={13} />
-                  WITNEXA AI
+                  Writnexa AI
                 </div>
 
                 <h3 className="mt-7 text-2xl font-bold tracking-tight">
@@ -382,39 +334,120 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Benefits */}
+      {/* Pricing */}
       <section id="pricing" className="bg-white">
         <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
-          <div className="rounded-[32px] bg-[#f4f1ec] p-7 sm:p-12 lg:p-16">
-            <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">
-                  Built for creators
-                </p>
-                <h2 className="mt-4 text-4xl font-bold tracking-[-0.045em] sm:text-5xl">
-                  Spend less time staring at the cursor.
-                </h2>
-                <p className="mt-5 text-base leading-7 text-zinc-600">
-                  Writnexa handles the heavy lifting so you can spend more
-                  time creating, publishing and growing.
-                </p>
-              </div>
+          <div className="text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">
+              Simple pricing
+            </p>
+            <h2 className="mt-4 text-4xl font-bold tracking-[-0.045em] sm:text-5xl">
+              Choose the plan that fits your workflow.
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-zinc-600">
+              Start free, then upgrade when you need more writing capacity.
+              All plans give you access to the Writnexa writing workspace.
+            </p>
+          </div>
 
-              <div className="grid gap-3">
-                {benefits.map((benefit) => (
-                  <div
-                    key={benefit}
-                    className="flex items-center gap-3 rounded-2xl bg-white px-4 py-4 text-sm font-medium shadow-sm"
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                      <Check size={14} />
-                    </span>
-                    {benefit}
-                  </div>
-                ))}
-              </div>
+          <div className="mt-8 flex justify-center">
+            <div className="inline-flex rounded-full border border-zinc-200 bg-zinc-100 p-1">
+              <button
+                type="button"
+                onClick={() => setBillingInterval("monthly")}
+                className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                  billingInterval === "monthly"
+                    ? "bg-white text-zinc-900 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-900"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingInterval("annual")}
+                className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                  billingInterval === "annual"
+                    ? "bg-white text-zinc-900 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-900"
+                }`}
+              >
+                Annual
+              </button>
             </div>
           </div>
+
+          <div className="mt-8 grid gap-5 lg:grid-cols-3">
+            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <p className="text-sm font-bold text-zinc-900">Free</p>
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="text-4xl font-bold tracking-tight">₦0</span>
+                <span className="text-sm text-zinc-400">/month</span>
+              </div>
+              <p className="mt-2 text-sm text-zinc-500">
+                A simple way to get started.
+              </p>
+              <div className="mt-6 space-y-3 text-sm text-zinc-600">
+                <p>✓ 50 documents/month</p>
+                <p>✓ AI writing tools</p>
+                <p>✓ Templates and rewriting</p>
+              </div>
+              <a
+                href="/signup"
+                className="mt-8 flex h-11 items-center justify-center rounded-full border border-zinc-200 text-sm font-bold text-zinc-900 transition hover:bg-zinc-50"
+              >
+                Get started
+              </a>
+            </div>
+
+            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <p className="text-sm font-bold text-zinc-900">Starter</p>
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="text-4xl font-bold tracking-tight">{billingInterval === "monthly" ? "₦2,500" : "₦25,000"}</span>
+                <span className="text-sm text-zinc-400">/{billingInterval === "monthly" ? "month" : "year"}</span>
+              </div>
+              <p className="mt-2 text-sm text-zinc-500">
+                More room for regular content creation.
+              </p>
+              <div className="mt-6 space-y-3 text-sm text-zinc-600">
+                <p>✓ 200 documents/month</p>
+                <p>✓ AI writing tools</p>
+                <p>✓ Templates, rewriting and summaries</p>
+              </div>
+              <a
+                href="/signup"
+                className="mt-8 flex h-11 items-center justify-center rounded-full bg-zinc-900 text-sm font-bold text-white transition hover:bg-zinc-700"
+              >
+                Choose Starter
+              </a>
+            </div>
+
+            <div className="relative rounded-3xl bg-[#18181b] p-6 text-white shadow-xl">
+              <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
+                Most popular
+              </span>
+              <p className="mt-4 text-sm font-bold">Pro</p>
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="text-4xl font-bold tracking-tight">{billingInterval === "monthly" ? "₦5,000" : "₦50,000"}</span>
+                <span className="text-sm text-white/50">/{billingInterval === "monthly" ? "month" : "year"}</span>
+              </div>
+              <p className="mt-2 text-sm text-white/60">
+                For serious creators and higher-volume writing.
+              </p>
+              <div className="mt-6 space-y-3 text-sm text-white/75">
+                <p>✓ 500 documents/month</p>
+                <p>✓ Full AI writing workspace</p>
+                <p>✓ Templates, rewriting, summaries and translation</p>
+              </div>
+              <a
+                href="/signup"
+                className="mt-8 flex h-11 items-center justify-center rounded-full bg-white text-sm font-bold text-zinc-950 transition hover:bg-zinc-200"
+              >
+                Choose Pro
+              </a>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -428,10 +461,10 @@ export default function Home() {
           <p className="mx-auto mt-5 max-w-xl text-sm leading-6 text-zinc-400 sm:text-base">
             Turn that idea into something people want to read, watch and share.
           </p>
-          <button className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-zinc-950 transition hover:bg-zinc-200">
+          <a href="/signup" className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-zinc-950 transition hover:bg-zinc-200">
             Start writing for free
             <ArrowRight size={16} />
-          </button>
+          </a>
         </div>
       </section>
 
@@ -448,12 +481,8 @@ export default function Home() {
           <div>© {new Date().getFullYear()} Writnexa. Built for creators.</div>
 
           <div className="flex gap-5">
-            <a href="#" className="transition hover:text-white">
-              Privacy
-            </a>
-            <a href="#" className="transition hover:text-white">
-              Terms
-            </a>
+            <span>Privacy</span>
+            <span>Terms</span>
           </div>
         </div>
       </footer>
