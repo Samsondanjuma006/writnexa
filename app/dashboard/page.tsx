@@ -145,6 +145,7 @@ const documents: SavedDocument[] = [
 export default function DashboardPage() {
   const supabase = createClient();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const [idea, setIdea] = useState("");
   const [format, setFormat] = useState("Blog post");
   const [tone, setTone] = useState("Professional");
@@ -1671,9 +1672,23 @@ export default function DashboardPage() {
               <Search size={18} />
             </button>
 
-            <button className="rounded-xl border border-slate-200 p-2.5">
-              <Bell size={18} />
-            </button>
+            <div className="relative">
+              <button type="button" onClick={() => setNotificationOpen((open) => !open)} aria-label="Notifications" className="rounded-xl border border-slate-200 p-2.5 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
+                <Bell size={18} />
+              </button>
+              {notificationOpen && (
+                <div className="absolute right-0 top-12 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-[#18181b]">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-base dark:bg-slate-800">🌍</div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">New: Writnexa Translator</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Translate content across 40+ languages with the new public translator.</p>
+                      <a href="/translator" className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-slate-900 underline underline-offset-2 dark:text-white">Try Translator <ArrowRight size={13} /></a>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <button
               type="button"
