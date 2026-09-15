@@ -78,6 +78,10 @@ export default function Home() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#faf9f7] text-[#18181b]">
+      <div className="bg-[#18181b] px-4 py-2.5 text-center text-xs font-medium text-white">
+        <span>🌍 New: Writnexa Translator is now available across 40+ languages.</span>
+        <a href="/translator" className="ml-2 font-bold underline underline-offset-2 transition hover:text-zinc-300">Try Translator →</a>
+      </div>
       {/* Navigation */}
       <nav className="relative z-50 border-b border-black/[0.06] bg-[#faf9f7]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
