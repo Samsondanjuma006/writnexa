@@ -1513,6 +1513,10 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-slate-950 dark:bg-[#111113] dark:text-slate-100">
+      <div className="bg-[#18181b] px-4 py-2.5 text-center text-xs font-medium text-white">
+        <span>🌍 New: Writnexa Translator is now available across 40+ languages.</span>
+        <a href="/translator" className="ml-2 font-bold underline underline-offset-2 transition hover:text-zinc-300">Try Translator →</a>
+      </div>
       {menuOpen && (
         <button
           aria-label="Close menu"
