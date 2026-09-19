@@ -19,6 +19,7 @@ import {
   Settings,
   Sparkles,
   WandSparkles,
+  Video,
   X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -1607,6 +1608,7 @@ export default function DashboardPage() {
           <NavItem icon={FileText} label="Documents" />
           <NavItem icon={FolderOpen} label="Projects" />
           <NavItem icon={BookOpen} label="Templates" />
+          <NavItem icon={Video} label="Video Editor" href="/video-editor" />
 
           <p className="px-3 pb-2 pt-7 text-[10px] font-bold uppercase tracking-widest text-slate-400">
             Account
