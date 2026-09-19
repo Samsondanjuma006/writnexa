@@ -18,12 +18,18 @@ import {
 export default function VideoEditorPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [videoUrl, setVideoUrl] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
   const [splitPoints, setSplitPoints] = useState<number[]>([]);
+  const [captions, setCaptions] = useState<
+    { id: number; start: number; end: number; text: string }[]
+  >([]);
+  const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
+  const [captionError, setCaptionError] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -45,12 +51,56 @@ export default function VideoEditorPage() {
 
     const url = URL.createObjectURL(file);
     setVideoUrl(url);
+    setVideoFile(file);
     setFileName(file.name);
     setDuration(0);
     setCurrentTime(0);
     setTrimStart(0);
     setTrimEnd(0);
     setSplitPoints([]);
+    setCaptions([]);
+    setCaptionError("");
+  }
+
+  async function generateCaptions() {
+    if (!videoFile) {
+      setCaptionError("Upload a video first.");
+      return;
+    }
+
+    setIsGeneratingCaptions(true);
+    setCaptionError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", videoFile);
+
+      const response = await fetch("/api/video/captions", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data.error === "string"
+            ? data.error
+            : "We couldn't generate captions for this video.",
+        );
+      }
+
+      setCaptions(Array.isArray(data.segments) ? data.segments : []);
+    } catch (error) {
+      setCaptions([]);
+      setCaptionError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't generate captions for this video.",
+      );
+    } finally {
+      setIsGeneratingCaptions(false);
+    }
   }
 
   function handleLoadedMetadata(
@@ -181,6 +231,10 @@ export default function VideoEditorPage() {
     setCurrentTime(time);
   }
 
+  const activeCaption = captions.find(
+    (caption) => currentTime >= caption.start && currentTime <= caption.end,
+  );
+
   return (
     <main className="min-h-screen bg-[#f7f7f8] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col">
@@ -261,16 +315,26 @@ export default function VideoEditorPage() {
             <div className="flex flex-1 items-center justify-center rounded-3xl border border-slate-200 bg-slate-950 p-5 shadow-sm">
               <div className="relative flex aspect-video w-full max-w-4xl items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-black">
                 {videoUrl ? (
-                  <video
-                    ref={videoRef}
-                    key={videoUrl}
-                    src={videoUrl}
-                    controls
-                    playsInline
-                    onLoadedMetadata={handleLoadedMetadata}
-                    onTimeUpdate={handleTimeUpdate}
-                    className="h-full w-full rounded-2xl object-contain"
-                  />
+                  <>
+                    <video
+                      ref={videoRef}
+                      key={videoUrl}
+                      src={videoUrl}
+                      controls
+                      playsInline
+                      onLoadedMetadata={handleLoadedMetadata}
+                      onTimeUpdate={handleTimeUpdate}
+                      className="h-full w-full rounded-2xl object-contain"
+                    />
+
+                    {activeCaption ? (
+                      <div className="pointer-events-none absolute inset-x-4 bottom-14 flex justify-center">
+                        <div className="max-w-3xl rounded-lg bg-black/80 px-4 py-2 text-center text-sm font-semibold leading-relaxed text-white shadow-lg backdrop-blur-sm">
+                          {activeCaption.text}
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   <>
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(139,92,246,0.25),transparent_45%)]" />
@@ -303,6 +367,26 @@ export default function VideoEditorPage() {
                 )}
               </div>
             </div>
+
+            {captionError ? (
+              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {captionError}
+              </div>
+            ) : captions.length > 0 ? (
+              <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-violet-950">
+                      Captions ready
+                    </p>
+                    <p className="mt-0.5 text-xs text-violet-700">
+                      {captions.length} caption segments generated and synced to your video.
+                    </p>
+                  </div>
+                  <Captions size={18} className="shrink-0 text-violet-600" />
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
@@ -490,15 +574,28 @@ export default function VideoEditorPage() {
             </p>
 
             <div className="mt-3 space-y-3">
-              <button className="w-full rounded-2xl border border-slate-200 p-4 text-left transition hover:border-slate-300 hover:bg-slate-50">
+              <button
+                type="button"
+                onClick={generateCaptions}
+                disabled={!videoFile || isGeneratingCaptions}
+                className="w-full rounded-2xl border border-slate-200 p-4 text-left transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
                     <Captions size={17} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold">Generate captions</p>
+                    <p className="text-sm font-bold">
+                      {isGeneratingCaptions
+                        ? "Generating captions..."
+                        : captions.length
+                          ? "Regenerate captions"
+                          : "Generate captions"}
+                    </p>
                     <p className="mt-0.5 text-xs text-slate-500">
-                      Create synced subtitles automatically
+                      {isGeneratingCaptions
+                        ? "Transcribing your video"
+                        : "Create synced subtitles automatically"}
                     </p>
                   </div>
                 </div>
