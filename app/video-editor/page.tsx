@@ -480,6 +480,10 @@ export default function VideoEditorPage() {
 
       try {
         await ffmpeg.exec([
+          "-ss",
+          trimStart.toFixed(3),
+          "-t",
+          (trimEnd - trimStart).toFixed(3),
           "-i",
           inputName,
           "-filter_complex",
@@ -496,6 +500,12 @@ export default function VideoEditorPage() {
           "23",
           "-c:a",
           "aac",
+          "-b:a",
+          "128k",
+          "-ar",
+          "48000",
+          "-ac",
+          "2",
           "-movflags",
           "+faststart",
           outputName,
