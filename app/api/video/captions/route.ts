@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
@@ -92,13 +92,14 @@ export async function POST(request: Request) {
       type: fileData.type || "video/mp4",
     });
 
-    const openai = new OpenAI({
+    const groq = new OpenAI({
       apiKey,
+      baseURL: "https://api.groq.com/openai/v1",
     });
 
-    const transcription = await openai.audio.transcriptions.create({
+    const transcription = await groq.audio.transcriptions.create({
       file: videoFile,
-      model: "whisper-1",
+      model: "whisper-large-v3-turbo",
       response_format: "verbose_json",
       timestamp_granularities: ["segment"],
     });
