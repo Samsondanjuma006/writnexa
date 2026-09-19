@@ -6,6 +6,14 @@ import { createClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
+const BUCKET_NAME = "video-captions";
+
+type CaptionSegment = {
+  id: number;
+  start: number;
+  end: number;
+  text: string;
+};
 
 export async function POST(request: Request) {
   try {
@@ -32,27 +40,42 @@ export async function POST(request: Request) {
       );
     }
 
-    const formData = await request.formData();
-    const file = formData.get("file");
+    const body = await request.json();
+    const storagePath =
+      typeof body.storagePath === "string" ? body.storagePath : "";
 
-    if (!(file instanceof File)) {
+    if (!storagePath) {
       return NextResponse.json(
-        { error: "Please upload a video file." },
+        { error: "No uploaded video was provided." },
         { status: 400 },
       );
     }
 
-    if (
-      !file.type.startsWith("video/") &&
-      !file.type.startsWith("audio/")
-    ) {
+    const expectedPrefix = `${user.id}/`;
+
+    if (!storagePath.startsWith(expectedPrefix)) {
       return NextResponse.json(
-        { error: "Please upload a valid video or audio file." },
+        { error: "You can only generate captions for your own videos." },
+        { status: 403 },
+      );
+    }
+
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .download(storagePath);
+
+    if (downloadError || !fileData) {
+      console.error("Caption video download failed:", downloadError);
+
+      return NextResponse.json(
+        { error: "We couldn't access the uploaded video." },
         { status: 400 },
       );
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    if (fileData.size > MAX_FILE_SIZE) {
+      await supabase.storage.from(BUCKET_NAME).remove([storagePath]);
+
       return NextResponse.json(
         {
           error:
@@ -62,18 +85,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const fileName =
+      storagePath.split("/").pop() || "writnexa-video.mp4";
+
+    const videoFile = new File([fileData], fileName, {
+      type: fileData.type || "video/mp4",
+    });
+
     const openai = new OpenAI({
       apiKey,
     });
 
     const transcription = await openai.audio.transcriptions.create({
-      file,
+      file: videoFile,
       model: "whisper-1",
       response_format: "verbose_json",
       timestamp_granularities: ["segment"],
     });
 
-    const segments = (transcription.segments ?? [])
+    const segments: CaptionSegment[] = (transcription.segments ?? [])
       .map((segment, index) => ({
         id: index,
         start: Number(segment.start ?? 0),
@@ -87,6 +117,8 @@ export async function POST(request: Request) {
           Number.isFinite(segment.end) &&
           segment.end > segment.start,
       );
+
+    await supabase.storage.from(BUCKET_NAME).remove([storagePath]);
 
     return NextResponse.json({
       segments,

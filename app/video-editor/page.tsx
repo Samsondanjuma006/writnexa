@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { createClient } from "@/lib/supabase/client";
+
 import {
   Captions,
   ChevronDown,
@@ -72,25 +74,89 @@ export default function VideoEditorPage() {
     setCaptionError("");
 
     try {
-      const formData = new FormData();
-      formData.append("file", videoFile);
+      const supabase = createClient();
 
-      const response = await fetch("/api/video/captions", {
-        method: "POST",
-        body: formData,
-      });
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-      const data = await response.json();
+      if (userError || !user) {
+        throw new Error("You must be signed in to generate captions.");
+      }
+
+      const extension =
+        videoFile.name.split(".").pop()?.toLowerCase() || "mp4";
+      const storagePath = `${user.id}/${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("video-captions")
+        .upload(storagePath, videoFile, {
+          contentType: videoFile.type || "video/mp4",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("Caption video upload failed:", uploadError);
+        throw new Error(
+          "We couldn't upload this video for caption generation.",
+        );
+      }
+
+      let response: Response;
+
+      try {
+        response = await fetch("/api/video/captions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            storagePath,
+          }),
+        });
+      } catch (error) {
+        await supabase.storage.from("video-captions").remove([storagePath]);
+        throw error;
+      }
+
+      const responseText = await response.text();
+
+      let data: {
+        error?: string;
+        segments?: unknown[];
+      } = {};
+
+      try {
+        data = responseText
+          ? JSON.parse(responseText)
+          : {};
+      } catch {
+        throw new Error(
+          response.ok
+            ? "The caption service returned an unexpected response."
+            : `Caption generation failed (${response.status}).`,
+        );
+      }
 
       if (!response.ok) {
         throw new Error(
           typeof data.error === "string"
             ? data.error
-            : "We couldn't generate captions for this video.",
+            : `Caption generation failed (${response.status}).`,
         );
       }
 
-      setCaptions(Array.isArray(data.segments) ? data.segments : []);
+      setCaptions(
+        Array.isArray(data.segments)
+          ? (data.segments as {
+              id: number;
+              start: number;
+              end: number;
+              text: string;
+            }[])
+          : [],
+      );
     } catch (error) {
       setCaptions([]);
       setCaptionError(
