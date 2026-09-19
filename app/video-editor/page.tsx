@@ -20,6 +20,8 @@ export default function VideoEditorPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [fileName, setFileName] = useState("");
   const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     return () => {
@@ -58,6 +60,17 @@ export default function VideoEditorPage() {
 
   function openVideoPicker() {
     fileInputRef.current?.click();
+  }
+
+  function seekTimeline(event: React.MouseEvent<HTMLDivElement>) {
+    if (!videoRef.current || !duration) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const position = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
+    const nextTime = (position / rect.width) * duration;
+
+    videoRef.current.currentTime = nextTime;
+    setCurrentTime(nextTime);
   }
 
   return (
@@ -141,12 +154,16 @@ export default function VideoEditorPage() {
               <div className="relative flex aspect-video w-full max-w-4xl items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-black">
                 {videoUrl ? (
                   <video
+                    ref={videoRef}
                     key={videoUrl}
                     src={videoUrl}
                     controls
                     playsInline
                     onLoadedMetadata={(event) =>
                       setDuration(event.currentTarget.duration)
+                    }
+                    onTimeUpdate={(event) =>
+                      setCurrentTime(event.currentTarget.currentTime)
                     }
                     className="h-full w-full rounded-2xl object-contain"
                   />
@@ -194,20 +211,48 @@ export default function VideoEditorPage() {
                   </p>
                 </div>
                 <span className="shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
-                  00:00 / {formatTime(duration)}
+                  {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
               </div>
 
-              <div className="relative h-24 overflow-hidden rounded-xl bg-slate-50">
+              <div
+                onClick={seekTimeline}
+                className="relative h-24 cursor-pointer overflow-hidden rounded-xl bg-slate-50"
+              >
                 <div className="absolute left-0 right-0 top-1/2 h-px bg-slate-200" />
+
                 <div className="absolute inset-x-4 top-3 flex justify-between text-[10px] text-slate-400">
                   <span>00:00</span>
-                  <span>00:05</span>
-                  <span>00:10</span>
-                  <span>00:15</span>
-                  <span>00:20</span>
+                  <span>{formatTime(duration * 0.25)}</span>
+                  <span>{formatTime(duration * 0.5)}</span>
+                  <span>{formatTime(duration * 0.75)}</span>
+                  <span>{formatTime(duration)}</span>
                 </div>
-                <div className="absolute inset-x-4 bottom-3 h-10 rounded-lg border border-dashed border-slate-300" />
+
+                {videoUrl && duration > 0 && (
+                  <>
+                    <div className="absolute inset-x-4 bottom-3 h-10 overflow-hidden rounded-lg border border-slate-300 bg-slate-200">
+                      <div className="h-full bg-gradient-to-r from-violet-400/70 via-blue-400/60 to-emerald-400/60" />
+                    </div>
+
+                    <div
+                      className="absolute bottom-2 top-1 z-10 w-0.5 bg-violet-600"
+                      style={{
+                        left: `calc(16px + ((100% - 32px) * ${
+                          currentTime / duration
+                        }))`,
+                      }}
+                    >
+                      <div className="absolute -left-1.5 top-0 h-3 w-3 rounded-full bg-violet-600 shadow-sm" />
+                    </div>
+                  </>
+                )}
+
+                {!videoUrl && (
+                  <div className="absolute inset-x-4 bottom-3 flex h-10 items-center justify-center rounded-lg border border-dashed border-slate-300 text-xs text-slate-400">
+                    Upload a video to activate the timeline
+                  </div>
+                )}
               </div>
             </div>
           </section>
