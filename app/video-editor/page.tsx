@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 import {
   Captions,
@@ -33,10 +35,22 @@ export default function VideoEditorPage() {
   const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
   const [captionError, setCaptionError] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
+  const ffmpegRef = useRef<FFmpeg | null>(null);
+  const exportedUrlRef = useRef("");
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportError, setExportError] = useState("");
 
   useEffect(() => {
     return () => {
       if (videoUrl) URL.revokeObjectURL(videoUrl);
+
+      if (exportedUrlRef.current) {
+        URL.revokeObjectURL(exportedUrlRef.current);
+      }
+
+      ffmpegRef.current?.terminate();
     };
   }, [videoUrl]);
 
@@ -166,6 +180,143 @@ export default function VideoEditorPage() {
       );
     } finally {
       setIsGeneratingCaptions(false);
+    }
+  }
+
+  function getFileExtension(name: string) {
+    const extension = name.split(".").pop()?.toLowerCase();
+    return extension ? `.${extension}` : ".mp4";
+  }
+
+  function stripExtension(name: string) {
+    return name.replace(/\.[^/.]+$/, "");
+  }
+
+  async function loadFFmpeg() {
+    if (ffmpegRef.current?.loaded) {
+      return ffmpegRef.current;
+    }
+
+    const ffmpeg = ffmpegRef.current ?? new FFmpeg();
+    ffmpegRef.current = ffmpeg;
+
+    const baseURL =
+      "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
+
+    await ffmpeg.load({
+      coreURL: await toBlobURL(
+        `${baseURL}/ffmpeg-core.js`,
+        "text/javascript",
+      ),
+      wasmURL: await toBlobURL(
+        `${baseURL}/ffmpeg-core.wasm`,
+        "application/wasm",
+      ),
+    });
+
+    return ffmpeg;
+  }
+
+  async function exportVideo() {
+    if (!videoFile || !duration) {
+      setExportError("Please upload a video before exporting.");
+      return;
+    }
+
+    if (trimEnd <= trimStart) {
+      setExportError("The selected trim range is invalid.");
+      return;
+    }
+
+    setIsExporting(true);
+    setExportProgress(0);
+    setExportError("");
+
+    try {
+      const ffmpeg = await loadFFmpeg();
+
+      const inputExtension = getFileExtension(videoFile.name);
+      const inputName = `input${inputExtension}`;
+      const outputName = "writnexa-export.mp4";
+      const trimDuration = trimEnd - trimStart;
+
+      await ffmpeg.writeFile(inputName, await fetchFile(videoFile));
+
+      const progressHandler = ({ progress }: { progress: number }) => {
+        setExportProgress(Math.min(99, Math.max(0, Math.round(progress * 100))));
+      };
+
+      ffmpeg.on("progress", progressHandler);
+
+      try {
+        await ffmpeg.exec([
+          "-ss",
+          trimStart.toFixed(3),
+          "-i",
+          inputName,
+          "-t",
+          trimDuration.toFixed(3),
+          "-map",
+          "0:v:0",
+          "-map",
+          "0:a?",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "veryfast",
+          "-crf",
+          "23",
+          "-c:a",
+          "aac",
+          "-movflags",
+          "+faststart",
+          outputName,
+        ]);
+      } finally {
+        ffmpeg.off("progress", progressHandler);
+      }
+
+      const outputData = await ffmpeg.readFile(outputName);
+
+      if (typeof outputData === "string") {
+        throw new Error("FFmpeg returned an invalid video output.");
+      }
+
+      if (exportedUrlRef.current) {
+        URL.revokeObjectURL(exportedUrlRef.current);
+      }
+
+      const outputBuffer = new ArrayBuffer(outputData.byteLength);
+      new Uint8Array(outputBuffer).set(outputData);
+
+      const outputBlob = new Blob([outputBuffer], {
+        type: "video/mp4",
+      });
+
+      const outputUrl = URL.createObjectURL(outputBlob);
+      exportedUrlRef.current = outputUrl;
+
+      const link = document.createElement("a");
+      link.href = outputUrl;
+      link.download = `${stripExtension(videoFile.name)}-writnexa.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setExportProgress(100);
+
+      await ffmpeg.deleteFile(inputName);
+      await ffmpeg.deleteFile(outputName);
+    } catch (error) {
+      console.error("Video export failed:", error);
+
+      setExportError(
+        error instanceof Error
+          ? error.message
+          : "Video export failed. Please try again.",
+      );
+    } finally {
+      setIsExporting(false);
     }
   }
 
@@ -329,9 +480,13 @@ export default function VideoEditorPage() {
             <button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
               Save project
             </button>
-            <button className="flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
+            <button
+              onClick={exportVideo}
+              disabled={!videoFile || isExporting}
+              className="flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               <Download size={16} />
-              Export
+              {isExporting ? `Exporting ${exportProgress}%` : "Export"}
               <ChevronDown size={15} />
             </button>
           </div>
@@ -451,6 +606,40 @@ export default function VideoEditorPage() {
                   </div>
                   <Captions size={18} className="shrink-0 text-violet-600" />
                 </div>
+              </div>
+            ) : null}
+
+            {isExporting ? (
+              <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-violet-950">
+                      Exporting video
+                    </p>
+                    <p className="mt-1 text-xs text-violet-700">
+                      FFmpeg is rendering your selected trim range.
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-violet-700">
+                    {exportProgress}%
+                  </span>
+                </div>
+
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-violet-100">
+                  <div
+                    className="h-full rounded-full bg-violet-600 transition-all"
+                    style={{ width: `${exportProgress}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {exportError ? (
+              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+                <p className="text-sm font-semibold text-red-800">
+                  Export failed
+                </p>
+                <p className="mt-1 text-xs text-red-700">{exportError}</p>
               </div>
             ) : null}
 
@@ -703,9 +892,13 @@ export default function VideoEditorPage() {
                 platforms.
               </p>
 
-              <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-bold text-slate-950">
+              <button
+                onClick={exportVideo}
+                disabled={!videoFile || isExporting}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <Download size={15} />
-                Export video
+                {isExporting ? `Exporting ${exportProgress}%` : "Export video"}
               </button>
             </div>
           </aside>
