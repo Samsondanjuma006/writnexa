@@ -21,6 +21,9 @@ export default function VideoEditorPage() {
   const [fileName, setFileName] = useState("");
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+  const [splitPoints, setSplitPoints] = useState<number[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -44,6 +47,19 @@ export default function VideoEditorPage() {
     setVideoUrl(url);
     setFileName(file.name);
     setDuration(0);
+    setCurrentTime(0);
+    setTrimStart(0);
+    setTrimEnd(0);
+    setSplitPoints([]);
+  }
+
+  function handleLoadedMetadata(
+    event: React.SyntheticEvent<HTMLVideoElement>
+  ) {
+    const nextDuration = event.currentTarget.duration;
+    setDuration(nextDuration);
+    setTrimStart(0);
+    setTrimEnd(nextDuration);
   }
 
   function formatTime(seconds: number) {
@@ -58,6 +74,66 @@ export default function VideoEditorPage() {
     ).padStart(2, "0")}`;
   }
 
+  function updateTrimStart(value: number) {
+    const maxStart = Math.max(trimEnd - 0.1, 0);
+    const nextStart = Math.max(0, Math.min(value, maxStart));
+    setTrimStart(nextStart);
+
+    if (videoRef.current && videoRef.current.currentTime < nextStart) {
+      videoRef.current.currentTime = nextStart;
+      setCurrentTime(nextStart);
+    }
+  }
+
+  function updateTrimEnd(value: number) {
+    const minEnd = Math.min(trimStart + 0.1, duration);
+    const nextEnd = Math.min(duration, Math.max(value, minEnd));
+    setTrimEnd(nextEnd);
+
+    if (videoRef.current && videoRef.current.currentTime > nextEnd) {
+      videoRef.current.currentTime = nextEnd;
+      setCurrentTime(nextEnd);
+    }
+  }
+
+  function resetTrim() {
+    setTrimStart(0);
+    setTrimEnd(duration);
+
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      setCurrentTime(0);
+    }
+  }
+
+  function splitAtPlayhead() {
+    if (!videoUrl || !duration) return;
+
+    const point = Math.max(trimStart, Math.min(currentTime, trimEnd));
+
+    if (
+      point <= trimStart + 0.05 ||
+      point >= trimEnd - 0.05 ||
+      splitPoints.some(
+        (existingPoint) => Math.abs(existingPoint - point) < 0.1
+      )
+    ) {
+      return;
+    }
+
+    setSplitPoints((points) =>
+      [...points, point].sort((a, b) => a - b)
+    );
+  }
+
+  function removeSplitPoint(point: number) {
+    setSplitPoints((points) =>
+      points.filter(
+        (existingPoint) => Math.abs(existingPoint - point) >= 0.1
+      )
+    );
+  }
+
   function openVideoPicker() {
     fileInputRef.current?.click();
   }
@@ -66,11 +142,32 @@ export default function VideoEditorPage() {
     if (!videoRef.current || !duration) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const position = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
-    const nextTime = (position / rect.width) * duration;
+    const position = Math.max(
+      0,
+      Math.min(event.clientX - rect.left, rect.width)
+    );
+    const requestedTime = (position / rect.width) * duration;
+    const nextTime = Math.max(
+      trimStart,
+      Math.min(requestedTime, trimEnd || duration)
+    );
 
     videoRef.current.currentTime = nextTime;
     setCurrentTime(nextTime);
+  }
+
+  function handleTimeUpdate(
+    event: React.SyntheticEvent<HTMLVideoElement>
+  ) {
+    const time = event.currentTarget.currentTime;
+
+    if (trimEnd > trimStart && time >= trimEnd) {
+      event.currentTarget.currentTime = trimStart;
+      setCurrentTime(trimStart);
+      return;
+    }
+
+    setCurrentTime(time);
   }
 
   return (
@@ -159,12 +256,8 @@ export default function VideoEditorPage() {
                     src={videoUrl}
                     controls
                     playsInline
-                    onLoadedMetadata={(event) =>
-                      setDuration(event.currentTarget.duration)
-                    }
-                    onTimeUpdate={(event) =>
-                      setCurrentTime(event.currentTarget.currentTime)
-                    }
+                    onLoadedMetadata={handleLoadedMetadata}
+                    onTimeUpdate={handleTimeUpdate}
                     className="h-full w-full rounded-2xl object-contain"
                   />
                 ) : (
@@ -233,7 +326,34 @@ export default function VideoEditorPage() {
                   <>
                     <div className="absolute inset-x-4 bottom-3 h-10 overflow-hidden rounded-lg border border-slate-300 bg-slate-200">
                       <div className="h-full bg-gradient-to-r from-violet-400/70 via-blue-400/60 to-emerald-400/60" />
+
+                      <div
+                        className="absolute bottom-0 top-0 border-2 border-violet-500 bg-violet-500/10"
+                        style={{
+                          left: `${(trimStart / duration) * 100}%`,
+                          right: `${100 - (trimEnd / duration) * 100}%`,
+                        }}
+                      />
                     </div>
+
+                    {splitPoints.map((point) => (
+                      <button
+                        key={point}
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeSplitPoint(point);
+                        }}
+                        className="absolute bottom-2 top-9 z-20 w-0.5 bg-amber-500"
+                        style={{
+                          left: `calc(16px + ((100% - 32px) * ${
+                            point / duration
+                          }))`,
+                        }}
+                        title={`Remove split at ${formatTime(point)}`}
+                        aria-label={`Remove split at ${formatTime(point)}`}
+                      />
+                    ))}
 
                     <div
                       className="absolute bottom-2 top-1 z-10 w-0.5 bg-violet-600"
@@ -247,13 +367,109 @@ export default function VideoEditorPage() {
                     </div>
                   </>
                 )}
-
                 {!videoUrl && (
                   <div className="absolute inset-x-4 bottom-3 flex h-10 items-center justify-center rounded-lg border border-dashed border-slate-300 text-xs text-slate-400">
                     Upload a video to activate the timeline
                   </div>
                 )}
               </div>
+
+              {videoUrl && duration > 0 && (
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold">Trim & split</p>
+                      <p className="text-xs text-slate-500">
+                        Select the portion you want to keep and add split points at the playhead.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={resetTrim}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                      Reset trim
+                    </button>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                      <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold">
+                        <span>Trim start</span>
+                        <span className="text-slate-500">{formatTime(trimStart)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={duration}
+                        step={0.1}
+                        value={trimStart}
+                        onChange={(event) =>
+                          updateTrimStart(Number(event.target.value))
+                        }
+                        className="w-full accent-violet-600"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold">
+                        <span>Trim end</span>
+                        <span className="text-slate-500">{formatTime(trimEnd)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={duration}
+                        step={0.1}
+                        value={trimEnd}
+                        onChange={(event) =>
+                          updateTrimEnd(Number(event.target.value))
+                        }
+                        className="w-full accent-violet-600"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-xs text-slate-500">
+                      Selected clip:{" "}
+                      <span className="font-semibold text-slate-700">
+                        {formatTime(Math.max(0, trimEnd - trimStart))}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={splitAtPlayhead}
+                      disabled={
+                        currentTime <= trimStart + 0.05 ||
+                        currentTime >= trimEnd - 0.05
+                      }
+                      className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Scissors className="h-3.5 w-3.5" />
+                      Split at playhead
+                    </button>
+                  </div>
+
+                  {splitPoints.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {splitPoints.map((point) => (
+                        <button
+                          key={point}
+                          type="button"
+                          onClick={() => removeSplitPoint(point)}
+                          className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
+                          title="Remove split point"
+                        >
+                          Split {formatTime(point)} ×
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
 
