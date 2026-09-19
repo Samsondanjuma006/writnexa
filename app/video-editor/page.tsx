@@ -78,6 +78,11 @@ export default function VideoEditorPage() {
     const maxStart = Math.max(trimEnd - 0.1, 0);
     const nextStart = Math.max(0, Math.min(value, maxStart));
     setTrimStart(nextStart);
+    setSplitPoints((points) =>
+      points.filter(
+        (point) => point >= nextStart && point <= trimEnd
+      )
+    );
 
     if (videoRef.current && videoRef.current.currentTime < nextStart) {
       videoRef.current.currentTime = nextStart;
@@ -89,6 +94,11 @@ export default function VideoEditorPage() {
     const minEnd = Math.min(trimStart + 0.1, duration);
     const nextEnd = Math.min(duration, Math.max(value, minEnd));
     setTrimEnd(nextEnd);
+    setSplitPoints((points) =>
+      points.filter(
+        (point) => point >= trimStart && point <= nextEnd
+      )
+    );
 
     if (videoRef.current && videoRef.current.currentTime > nextEnd) {
       videoRef.current.currentTime = nextEnd;
@@ -99,6 +109,7 @@ export default function VideoEditorPage() {
   function resetTrim() {
     setTrimStart(0);
     setTrimEnd(duration);
+    setSplitPoints([]);
 
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
