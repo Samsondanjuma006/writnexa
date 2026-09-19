@@ -46,6 +46,10 @@ export default function VideoEditorPage() {
   const [splitProgress, setSplitProgress] = useState(0);
   const [splitError, setSplitError] = useState("");
 
+  const [isRemovingSilence, setIsRemovingSilence] = useState(false);
+  const [silenceProgress, setSilenceProgress] = useState(0);
+  const [silenceError, setSilenceError] = useState("");
+
   useEffect(() => {
     return () => {
       if (videoUrl) URL.revokeObjectURL(videoUrl);
@@ -321,6 +325,225 @@ export default function VideoEditorPage() {
       );
     } finally {
       setIsExporting(false);
+    }
+  }
+
+  async function removeSilence() {
+    if (!videoFile || !duration) {
+      setSilenceError("Please upload a video before removing silence.");
+      return;
+    }
+
+    if (trimEnd <= trimStart) {
+      setSilenceError("The selected trim range is invalid.");
+      return;
+    }
+
+    setIsRemovingSilence(true);
+    setSilenceProgress(0);
+    setSilenceError("");
+
+    const inputName = `silence-input${getFileExtension(videoFile.name)}`;
+    const outputName = "writnexa-no-silence.mp4";
+
+    try {
+      const ffmpeg = await loadFFmpeg();
+
+      await ffmpeg.writeFile(inputName, await fetchFile(videoFile));
+
+      const silenceLogs: string[] = [];
+
+      const logHandler = ({ message }: { message: string }) => {
+        silenceLogs.push(message);
+      };
+
+      ffmpeg.on("log", logHandler);
+
+      try {
+        await ffmpeg.exec([
+          "-ss",
+          trimStart.toFixed(3),
+          "-t",
+          (trimEnd - trimStart).toFixed(3),
+          "-i",
+          inputName,
+          "-af",
+          "silencedetect=n=-35dB:d=0.5",
+          "-f",
+          "null",
+          "-",
+        ]);
+      } finally {
+        ffmpeg.off("log", logHandler);
+      }
+
+      setSilenceProgress(20);
+
+      const rangeDuration = trimEnd - trimStart;
+      const silences: { start: number; end: number }[] = [];
+
+      let silenceStart: number | null = null;
+
+      for (const message of silenceLogs) {
+        const startMatch = message.match(/silence_start:\s*([0-9.]+)/);
+        const endMatch = message.match(/silence_end:\s*([0-9.]+)/);
+
+        if (startMatch) {
+          silenceStart = Number(startMatch[1]);
+        }
+
+        if (endMatch && silenceStart !== null) {
+          const end = Number(endMatch[1]);
+
+          if (end > silenceStart) {
+            silences.push({
+              start: Math.max(0, silenceStart),
+              end: Math.min(rangeDuration, end),
+            });
+          }
+
+          silenceStart = null;
+        }
+      }
+
+      if (silenceStart !== null) {
+        silences.push({
+          start: Math.max(0, silenceStart),
+          end: rangeDuration,
+        });
+      }
+
+      const segments: { start: number; end: number }[] = [];
+      let cursor = 0;
+
+      for (const silence of silences.sort((a, b) => a.start - b.start)) {
+        const start = Math.max(cursor, silence.start);
+        const end = Math.min(rangeDuration, silence.end);
+
+        if (start - cursor > 0.08) {
+          segments.push({
+            start: cursor,
+            end: start,
+          });
+        }
+
+        cursor = Math.max(cursor, end);
+      }
+
+      if (rangeDuration - cursor > 0.08) {
+        segments.push({
+          start: cursor,
+          end: rangeDuration,
+        });
+      }
+
+      if (segments.length === 0) {
+        throw new Error(
+          "No audible content was found in the selected video range.",
+        );
+      }
+
+      if (silences.length === 0) {
+        segments.splice(0, segments.length, {
+          start: 0,
+          end: rangeDuration,
+        });
+      }
+
+      setSilenceProgress(35);
+
+      const filterParts: string[] = [];
+      const concatInputs: string[] = [];
+
+      segments.forEach((segment, index) => {
+        filterParts.push(
+          `[0:v]trim=start=${segment.start.toFixed(3)}:end=${segment.end.toFixed(3)},setpts=PTS-STARTPTS[v${index}]`,
+        );
+        filterParts.push(
+          `[0:a]atrim=start=${segment.start.toFixed(3)}:end=${segment.end.toFixed(3)},asetpts=PTS-STARTPTS[a${index}]`,
+        );
+        concatInputs.push(`[v${index}][a${index}]`);
+      });
+
+      filterParts.push(
+        `${concatInputs.join("")}concat=n=${segments.length}:v=1:a=1[outv][outa]`,
+      );
+
+      const progressHandler = ({ progress }: { progress: number }) => {
+        const renderProgress = Math.min(1, Math.max(0, progress));
+        setSilenceProgress(
+          Math.min(99, Math.max(35, Math.round(35 + renderProgress * 60))),
+        );
+      };
+
+      ffmpeg.on("progress", progressHandler);
+
+      try {
+        await ffmpeg.exec([
+          "-i",
+          inputName,
+          "-filter_complex",
+          filterParts.join(";"),
+          "-map",
+          "[outv]",
+          "-map",
+          "[outa]",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "veryfast",
+          "-crf",
+          "23",
+          "-c:a",
+          "aac",
+          "-movflags",
+          "+faststart",
+          outputName,
+        ]);
+      } finally {
+        ffmpeg.off("progress", progressHandler);
+      }
+
+      setSilenceProgress(98);
+
+      const outputData = await ffmpeg.readFile(outputName);
+
+      if (typeof outputData === "string") {
+        throw new Error("FFmpeg returned an invalid silence-removal output.");
+      }
+
+      const outputBuffer = new ArrayBuffer(outputData.byteLength);
+      new Uint8Array(outputBuffer).set(outputData);
+
+      const outputBlob = new Blob([outputBuffer], {
+        type: "video/mp4",
+      });
+
+      const outputUrl = URL.createObjectURL(outputBlob);
+      const link = document.createElement("a");
+
+      link.href = outputUrl;
+      link.download = `${stripExtension(videoFile.name)}-no-silence.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.setTimeout(() => URL.revokeObjectURL(outputUrl), 60000);
+
+      await ffmpeg.deleteFile(inputName);
+      await ffmpeg.deleteFile(outputName);
+
+      setSilenceProgress(100);
+    } catch (error) {
+      console.error("Remove silence failed:", error);
+
+      setSilenceError(
+        error instanceof Error
+          ? error.message
+          : "Remove silence failed. Please try again.",
+      );
+    } finally {
+      setIsRemovingSilence(false);
     }
   }
 
@@ -1038,19 +1261,60 @@ export default function VideoEditorPage() {
                 </div>
               </button>
 
-              <button className="w-full rounded-2xl border border-slate-200 p-4 text-left transition hover:border-slate-300 hover:bg-slate-50">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <WandSparkles size={17} />
+              <div>
+                <button
+                  type="button"
+                  onClick={removeSilence}
+                  disabled={!videoFile || isRemovingSilence || isExporting || isSplitting}
+                  className="w-full rounded-2xl border border-slate-200 p-4 text-left transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <WandSparkles size={17} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold">
+                        {isRemovingSilence
+                          ? `Removing silence ${silenceProgress}%`
+                          : "Remove silence"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        Tighten your video automatically
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold">Remove silence</p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      Tighten your video automatically
+                </button>
+
+                {isRemovingSilence ? (
+                  <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold text-blue-950">
+                        Removing silent sections
+                      </p>
+                      <span className="text-xs font-bold text-blue-700">
+                        {silenceProgress}%
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-blue-100">
+                      <div
+                        className="h-full rounded-full bg-blue-600 transition-all"
+                        style={{ width: `${silenceProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+
+                {silenceError ? (
+                  <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3">
+                    <p className="text-xs font-semibold text-red-800">
+                      Remove silence failed
+                    </p>
+                    <p className="mt-1 text-xs text-red-700">
+                      {silenceError}
                     </p>
                   </div>
-                </div>
-              </button>
+                ) : null}
+              </div>
 
               <button className="w-full rounded-2xl border border-slate-200 p-4 text-left transition hover:border-slate-300 hover:bg-slate-50">
                 <div className="flex items-center gap-3">
