@@ -99,7 +99,7 @@ export default function VideoEditorPage() {
       if (uploadError) {
         console.error("Caption video upload failed:", uploadError);
         throw new Error(
-          "We couldn't upload this video for caption generation.",
+          `Caption upload failed: ${uploadError.message}`,
         );
       }
 
