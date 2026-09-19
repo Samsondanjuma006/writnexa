@@ -126,10 +126,12 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Caption generation failed:", error);
 
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+
     return NextResponse.json(
       {
-        error:
-          "We couldn't generate captions for this video. Please try again.",
+        error: `Caption generation failed: ${errorMessage}`,
       },
       { status: 500 },
     );
