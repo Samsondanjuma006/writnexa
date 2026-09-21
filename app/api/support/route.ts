@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "openrouter/free";
+const MODELS = [
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "inclusionai/ling-3.0-flash-vl:free",
+  "liquid/lfm-2.5-2.6b:free",
+] as const;
 
 const SUPPORT_SYSTEM_PROMPT = `
 You are Writnexa AI Support, the official AI customer-care assistant for Writnexa.
@@ -237,7 +241,7 @@ export async function POST(request: Request) {
         "X-Title": "Writnexa AI Support",
       },
       body: JSON.stringify({
-        model: MODEL,
+        models: MODELS,
         messages: [
           {
             role: "system",
