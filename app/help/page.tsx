@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import WritnexaAISupport from "@/components/writnexa-ai-support";
 import { useMemo, useState } from "react";
 
 const helpSections = [
@@ -188,6 +189,10 @@ export default function HelpPage() {
           </div>
         </div>
       </header>
+
+      <section className="mx-auto max-w-6xl px-5 pt-8 sm:px-8">
+        <WritnexaAISupport variant="full" />
+      </section>
 
       <section className="border-b border-slate-200 bg-slate-50">
         <div className="mx-auto max-w-4xl px-5 py-14 text-center sm:px-8">

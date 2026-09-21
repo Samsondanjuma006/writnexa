@@ -27,6 +27,7 @@ import remarkGfm from "remark-gfm";
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import WritnexaAISupport from "@/components/writnexa-ai-support";
 
 const translationLanguages = [
   "English",
@@ -2325,6 +2326,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+      <WritnexaAISupport variant="floating" />
     </main>
   );
 }
