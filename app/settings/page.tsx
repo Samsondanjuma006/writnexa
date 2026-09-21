@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import WritnexaAISupport from "@/components/writnexa-ai-support";
 
 const formats = [
   "Blog post",
@@ -364,6 +365,10 @@ export default function SettingsPage() {
             </section>
           </div>
         )}
+
+        <div className="mt-8">
+          <WritnexaAISupport variant="floating" />
+        </div>
       </div>
     </main>
   );
