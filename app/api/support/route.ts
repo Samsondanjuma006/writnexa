@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { WRITNEXA_SUPPORT_KNOWLEDGE } from "@/lib/support/knowledge";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MODELS = [
@@ -266,7 +267,33 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "system",
-            content: SUPPORT_SYSTEM_PROMPT,
+            content: `${SUPPORT_SYSTEM_PROMPT}
+
+STRUCTURED WRITNEXA SUPPORT KNOWLEDGE
+
+Use the following structured knowledge as the factual source for Writnexa support. Do not invent capabilities that are not represented here. If the knowledge does not contain enough information to answer confidently, say so and continue troubleshooting conversationally or escalate when appropriate.
+
+${JSON.stringify(WRITNEXA_SUPPORT_KNOWLEDGE, null, 2)}
+
+SUPPORT DECISION FRAMEWORK
+
+Before answering each user message:
+
+1. Identify the user's most likely support intent from the structured "intents" knowledge.
+2. Identify the relevant Writnexa area.
+3. Apply that intent's response strategy.
+4. Use the conversation history to determine what has already been established.
+5. Never ask the user to repeat information they have already provided.
+6. If the request is a troubleshooting issue, ask only the single most useful next diagnostic question unless the issue can be resolved directly.
+7. Do not skip ahead in a documented troubleshooting sequence.
+8. Give a concise useful explanation before a diagnostic question when that helps the user understand what is happening.
+9. If the documented troubleshooting path has been exhausted without resolution, clearly recommend human review instead of inventing another solution.
+10. If no intent confidently matches the request, do not guess. Ask one concise clarifying question or explain that the issue may require human review.
+11. Treat the structured knowledge as product facts, not as permission to invent undocumented buttons, links, settings, plan limits, or account information.
+12. Never claim to have inspected the user's private account, documents, projects, videos, billing information, or application state unless that information is explicitly provided in the conversation.
+13. Never request passwords, authentication codes, API keys, or payment-card details.
+14. Remain transparent that you are Writnexa AI Support and not a human support agent.
+`,
           },
           ...conversation,
         ],
