@@ -195,7 +195,7 @@ export const WRITNEXA_SUPPORT_KNOWLEDGE = {
       description: "The user wants to rewrite existing text.",
       areas: ["Dashboard", "Templates"],
       strategy:
-        "Explain that Rewrite improves existing text for clarity, structure, tone, and impact. Guide the user through the known Rewrite workflow without inventing controls.",
+        "Explain that Rewrite improves existing text for clarity, structure, tone, and impact. Describe the documented Rewrite capability without assuming undocumented buttons, menus, input controls, or interaction steps.",
     },
 
     writing_action: {
@@ -237,7 +237,7 @@ export const WRITNEXA_SUPPORT_KNOWLEDGE = {
       description: "The user wants to change writing preferences.",
       areas: ["Settings"],
       strategy:
-        "Explain the documented preference capabilities, including default writing format, default writing tone, appearance, and saving preferences. Do not invent navigation details.",
+        "Explain the documented preference capabilities, including default writing format, default writing tone, appearance, and saving preferences. Do not invent navigation details or claim where preferences are stored unless that is explicitly documented.",
     },
 
     translator_help: {
